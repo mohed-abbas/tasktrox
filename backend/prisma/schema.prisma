@@ -1,0 +1,36 @@
+// Prisma Schema for Tasktrox
+// This is the initial schema - will be expanded in Phase 2
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - will be expanded with auth in Phase 2
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String?
+  avatar        String?
+
+  // OAuth
+  googleId      String?   @unique
+  appleId       String?   @unique
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relations (will be added in Phase 3)
+  // projects      Project[]
+  // tasks         Task[]
+  // comments      Comment[]
+
+  @@map("users")
+}

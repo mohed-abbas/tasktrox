@@ -1,0 +1,338 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   TASKTROX DESIGN SYSTEM
+   Refreshed from Figma - December 2025
+   ======================================== */
+
+@layer base {
+  :root {
+    /* ===== Page & Surface Colors ===== */
+    --background: 210 33% 99%; /* #FAFCFE - page background */
+    --foreground: 215 25% 23%; /* #2E3744 - body text */
+
+    /* ===== Card Colors ===== */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 215 25% 23%; /* #2E3744 */
+
+    /* ===== Popover Colors ===== */
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 23%;
+
+    /* ===== Primary - Gray/Dark (main actions) ===== */
+    --primary: 217 19% 17%; /* #1F2937 - gray-800 */
+    --primary-foreground: 0 0% 100%; /* white */
+
+    /* ===== Secondary - Light Gray ===== */
+    --secondary: 220 14% 96%; /* #F3F4F6 - gray-100 */
+    --secondary-foreground: 217 19% 17%; /* gray-800 */
+
+    /* ===== Muted - Subtle elements ===== */
+    --muted: 220 14% 96%; /* #F3F4F6 */
+    --muted-foreground: 215 16% 47%; /* #6B7280 - gray-500 */
+
+    /* ===== Accent - Hover/Focus states ===== */
+    --accent: 0 0% 94%; /* #F0F0F0 - sidebar hover */
+    --accent-foreground: 215 25% 23%;
+
+    /* ===== Destructive - Errors ===== */
+    --destructive: 0 84% 60%; /* #EF4444 */
+    --destructive-foreground: 0 0% 100%;
+
+    /* ===== Borders ===== */
+    --border: 220 13% 91%; /* #E5E7EB - gray-200 */
+    --input: 220 13% 91%;
+    --ring: 217 19% 17%; /* gray-800 for focus rings */
+
+    /* ===== Border Radius ===== */
+    --radius: 0.75rem; /* 12px - card radius */
+
+    /* ===== Chart Colors (data visualization) ===== */
+    --chart-1: 142 71% 45%; /* green - success */
+    --chart-2: 45 93% 47%; /* yellow - warning */
+    --chart-3: 217 91% 60%; /* blue - info */
+    --chart-4: 271 81% 56%; /* purple - in review */
+    --chart-5: 330 81% 60%; /* pink */
+  }
+
+  .dark {
+    /* Dark mode colors (future implementation) */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 212 27% 84%;
+    --chart-1: 142 71% 45%;
+    --chart-2: 45 93% 47%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 271 81% 56%;
+    --chart-5: 330 81% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-page text-body;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+
+  /* ===== Heading Styles ===== */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-gray-800 font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-xl;
+  }
+
+  h2 {
+    @apply text-base font-semibold;
+  }
+
+  h3 {
+    @apply text-sm font-medium;
+  }
+}
+
+/* ========================================
+   CUSTOM SCROLLBAR
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+/* ========================================
+   FOCUS STYLES
+   ======================================== */
+
+*:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+}
+
+/* ========================================
+   SELECTION STYLES
+   ======================================== */
+
+::selection {
+  @apply bg-gray-800/10;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Truncate text with ellipsis */
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-sm;
+  }
+
+  /* Drag handle cursor */
+  .cursor-grab {
+    cursor: grab;
+  }
+
+  .cursor-grab:active {
+    cursor: grabbing;
+  }
+}
+
+/* ========================================
+   COMPONENT PATTERNS
+   ======================================== */
+
+@layer components {
+  /* ===== Task Card ===== */
+  .task-card {
+    @apply bg-white rounded-card shadow-card p-3 cursor-grab transition-shadow duration-200;
+  }
+
+  .task-card:hover {
+    @apply shadow-card-hover;
+  }
+
+  .task-card.dragging {
+    @apply shadow-lg rotate-2 opacity-90;
+  }
+
+  /* ===== Label/Tag ===== */
+  .label-tag {
+    @apply inline-flex items-center px-2 py-0.5 rounded-tag text-xs font-medium;
+  }
+
+  /* Label color variants */
+  .label-tag-purple {
+    @apply bg-label-purple-bg text-label-purple-text;
+  }
+
+  .label-tag-green {
+    @apply bg-label-green-bg text-label-green-text;
+  }
+
+  .label-tag-yellow {
+    @apply bg-label-yellow-bg text-label-yellow-text;
+  }
+
+  .label-tag-blue {
+    @apply bg-label-blue-bg text-label-blue-text;
+  }
+
+  .label-tag-pink {
+    @apply bg-label-pink-bg text-label-pink-text;
+  }
+
+  .label-tag-red {
+    @apply bg-label-red-bg text-label-red-text;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-sm text-body text-sm transition-colors;
+  }
+
+  .sidebar-item:hover {
+    @apply bg-sidebar-hover;
+  }
+
+  .sidebar-item.active {
+    @apply bg-sidebar-active font-medium;
+  }
+
+  /* ===== Column Header ===== */
+  .column-header {
+    @apply flex items-center justify-between px-3 py-2 mb-3;
+  }
+
+  .column-header-title {
+    @apply flex items-center gap-2 text-sm font-semibold;
+  }
+
+  .column-header-count {
+    @apply bg-gray-100 text-gray-500 text-xs font-medium px-1.5 py-0.5 rounded;
+  }
+
+  /* ===== Add Task Button ===== */
+  .add-task-button {
+    @apply flex items-center justify-center gap-2 w-full py-2 text-gray-500 text-sm rounded-sm transition-colors;
+  }
+
+  .add-task-button:hover {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+  /* ===== Button Variants ===== */
+  .btn-primary {
+    @apply bg-gray-800 text-white hover:bg-gray-700 rounded-button px-4 py-2 text-sm font-medium transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-800 hover:bg-gray-200 rounded-button px-4 py-2 text-sm font-medium transition-colors;
+  }
+
+  .btn-ghost {
+    @apply text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-button px-4 py-2 text-sm font-medium transition-colors;
+  }
+
+  /* ===== Input Styles ===== */
+  .input-base {
+    @apply w-full px-3 py-2 rounded-input border border-gray-200 text-sm placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-800/10 transition-colors;
+  }
+
+  /* ===== Avatar ===== */
+  .avatar {
+    @apply rounded-avatar overflow-hidden flex-shrink-0;
+  }
+
+  .avatar-sm {
+    @apply size-6;
+  }
+
+  .avatar-md {
+    @apply size-8;
+  }
+
+  .avatar-lg {
+    @apply size-10;
+  }
+
+  /* ===== Avatar Stack ===== */
+  .avatar-stack {
+    @apply flex -space-x-2;
+  }
+
+  .avatar-stack > * {
+    @apply ring-2 ring-white;
+  }
+}

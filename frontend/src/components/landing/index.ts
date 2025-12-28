@@ -1,0 +1,9 @@
+export { Header } from './Header';
+export { Hero } from './Hero';
+export { LogoBar } from './LogoBar';
+export { Features } from './Features';
+export { ProductShowcase } from './ProductShowcase';
+export { Pricing } from './Pricing';
+export { Testimonials } from './Testimonials';
+export { CTA } from './CTA';
+export { Footer } from './Footer';
