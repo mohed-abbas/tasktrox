@@ -1,9 +1,9 @@
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
 export const api: AxiosInstance = axios.create({
-  baseURL: `${API_URL}/api/v1`,
+  baseURL: API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -11,12 +11,14 @@ export const api: AxiosInstance = axios.create({
   withCredentials: true, // For cookies
 });
 
+const TOKEN_KEY = 'tasktrox_access_token';
+
 // Request interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Get token from localStorage if available
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem(TOKEN_KEY);
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -40,13 +42,13 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `${API_URL}/api/v1/auth/refresh`,
+          `${API_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
 
         const { accessToken } = response.data.data;
-        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem(TOKEN_KEY, accessToken);
 
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -55,7 +57,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         // Refresh failed - redirect to login
-        localStorage.removeItem('accessToken');
+        localStorage.removeItem(TOKEN_KEY);
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
         }

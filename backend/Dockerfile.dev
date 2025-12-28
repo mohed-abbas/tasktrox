@@ -20,8 +20,12 @@ RUN npx prisma generate || true
 # Copy source code (will be overwritten by volume mount in dev)
 COPY . .
 
+# Copy and set permissions for entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Expose port
 EXPOSE 4000
 
-# Start development server with hot reload
-CMD ["npm", "run", "dev"]
+# Run entrypoint script (migrations + dev server)
+ENTRYPOINT ["docker-entrypoint.sh"]

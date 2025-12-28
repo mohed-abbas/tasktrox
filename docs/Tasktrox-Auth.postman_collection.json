@@ -1,0 +1,690 @@
+{
+  "info": {
+    "_postman_id": "tasktrox-auth-collection",
+    "name": "Tasktrox Authentication",
+    "description": "Complete authentication flow testing for Tasktrox API.\n\n## Testing Order:\n1. Health Check\n2. Register User\n3. Login User\n4. Get Current User\n5. Refresh Token\n6. Logout\n7. Test Protected Route (should fail after logout)\n\n## Variables:\n- `baseUrl`: http://localhost:4000/api/v1\n- `accessToken`: Auto-set after login/register\n- `refreshToken`: Auto-set after login/register",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4000/health",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["health"]
+            },
+            "description": "Verify the server is running and healthy."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1. Registration",
+      "item": [
+        {
+          "name": "Register New User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "        console.log('Access token saved');",
+                  "    }",
+                  "    pm.test('Registration successful', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.user.email).to.exist;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"SecurePass123!\",\n    \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account.\n\n**Required fields:**\n- email: Valid email address\n- password: Min 8 chars, 1 uppercase, 1 lowercase, 1 number\n- name: User's display name\n\n**Response:**\n- 201: User created successfully with tokens\n- 409: User already exists\n- 400: Validation error"
+          },
+          "response": []
+        },
+        {
+          "name": "Register - Duplicate Email (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"AnotherPass123!\",\n    \"name\": \"Another User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Attempt to register with an existing email. Should return 409 conflict."
+          },
+          "response": []
+        },
+        {
+          "name": "Register - Invalid Email (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"invalid-email\",\n    \"password\": \"SecurePass123!\",\n    \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Attempt to register with invalid email format. Should return 400 validation error."
+          },
+          "response": []
+        },
+        {
+          "name": "Register - Weak Password (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"newuser@example.com\",\n    \"password\": \"weak\",\n    \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Attempt to register with a weak password. Should return 400 validation error."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Login",
+      "item": [
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "        console.log('Access token saved');",
+                  "    }",
+                  "    pm.test('Login successful', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.user.email).to.exist;",
+                  "        pm.expect(response.data.accessToken).to.exist;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with existing credentials.\n\n**Required fields:**\n- email: Registered email address\n- password: Account password\n\n**Response:**\n- 200: Login successful with tokens\n- 401: Invalid credentials\n- 400: Validation error\n\n**Note:** Refresh token is set as httpOnly cookie"
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Invalid Credentials (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"WrongPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Attempt to login with wrong password. Should return 401 unauthorized."
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Non-existent User (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"nonexistent@example.com\",\n    \"password\": \"SomePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Attempt to login with non-existent email. Should return 401 unauthorized."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Authenticated Routes",
+      "item": [
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Get user successful', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "    pm.expect(response.data.user).to.exist;",
+                  "    pm.expect(response.data.user.email).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get the currently authenticated user's profile.\n\n**Headers:**\n- Authorization: Bearer <accessToken>\n\n**Response:**\n- 200: User profile data\n- 401: Unauthorized (no/invalid token)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User - No Token (Should Fail)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Attempt to access protected route without token. Should return 401 unauthorized."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User - Invalid Token (Should Fail)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-token-here"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Attempt to access protected route with invalid token. Should return 401 unauthorized."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Token Refresh",
+      "item": [
+        {
+          "name": "Refresh Token (via Body)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "        console.log('New access token saved');",
+                  "    }",
+                  "    pm.test('Token refresh successful', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.accessToken).to.exist;",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh the access token using a refresh token.\n\n**Note:** In browser, the refresh token is automatically sent via httpOnly cookie. For Postman testing, you can send it in the body.\n\n**Response:**\n- 200: New access token issued\n- 401: Invalid/expired refresh token"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token - Invalid (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"invalid-refresh-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Attempt to refresh with invalid token. Should return 401."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Password Reset",
+      "item": [
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"testuser@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "description": "Request a password reset email.\n\n**Note:** Always returns success to prevent email enumeration. Check server logs for the reset token in development.\n\n**Response:**\n- 200: Success message (always, for security)"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"paste-reset-token-from-server-logs\",\n    \"password\": \"NewSecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "description": "Reset password using the token from forgot-password email.\n\n**To test:**\n1. Call Forgot Password\n2. Check server logs for the reset token\n3. Paste the token in this request\n\n**Response:**\n- 200: Password reset successful\n- 400: Invalid/expired token"
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password - Invalid Token (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"invalid-reset-token\",\n    \"password\": \"NewSecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "description": "Attempt password reset with invalid token. Should return 400."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Logout",
+      "item": [
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Logout successful', function() {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.success).to.be.true;",
+                  "});",
+                  "",
+                  "// Clear tokens after logout",
+                  "pm.collectionVariables.set('accessToken', '');",
+                  "pm.collectionVariables.set('refreshToken', '');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout the current user.\n\n**Actions:**\n- Revokes the refresh token from database\n- Clears the refresh token cookie\n\n**Response:**\n- 200: Logout successful"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Logout - Get User (Should Fail)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "After logout, this should still work until the access token expires (15 min). The refresh token has been revoked, so new tokens cannot be obtained."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. OAuth",
+      "item": [
+        {
+          "name": "DEV - Simulate OAuth Login (Google)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "        console.log('OAuth access token saved');",
+                  "    }",
+                  "    pm.test('OAuth login successful', function() {",
+                  "        pm.expect(response.success).to.be.true;",
+                  "        pm.expect(response.data.user.provider).to.equal('google');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"provider\": \"google\",\n    \"providerId\": \"google-user-id-123456789\",\n    \"email\": \"oauthuser@gmail.com\",\n    \"name\": \"OAuth Test User\",\n    \"avatar\": \"https://lh3.googleusercontent.com/a/default-user\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/dev/oauth-test",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "dev", "oauth-test"]
+            },
+            "description": "**DEVELOPMENT ONLY** - Simulate OAuth login without going through Google.\n\n**Required fields:**\n- provider: OAuth provider name (google, apple, github)\n- providerId: Unique ID from the OAuth provider\n- email: User's email from OAuth provider\n- name: User's display name from OAuth provider\n\n**Optional fields:**\n- avatar: URL to user's profile picture\n\n**Behavior:**\n- If user with this provider+providerId exists: logs them in\n- If user with this email exists: links OAuth to existing account\n- Otherwise: creates new user\n\n**Response:**\n- 201: User created/logged in with tokens\n- 400: Missing required fields"
+          },
+          "response": []
+        },
+        {
+          "name": "DEV - Simulate OAuth Login (Apple)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"provider\": \"apple\",\n    \"providerId\": \"apple.user.abc123xyz\",\n    \"email\": \"privaterelay@privaterelay.appleid.com\",\n    \"name\": \"Apple Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/dev/oauth-test",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "dev", "oauth-test"]
+            },
+            "description": "**DEVELOPMENT ONLY** - Simulate Apple OAuth login.\n\nApple often provides a private relay email address."
+          },
+          "response": []
+        },
+        {
+          "name": "DEV - Link OAuth to Existing Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"provider\": \"google\",\n    \"providerId\": \"google-new-id-987654321\",\n    \"email\": \"testuser@example.com\",\n    \"name\": \"Test User\",\n    \"avatar\": \"https://lh3.googleusercontent.com/a/new-avatar\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/dev/oauth-test",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "dev", "oauth-test"]
+            },
+            "description": "**DEVELOPMENT ONLY** - Test linking OAuth to an existing local account.\n\nUse the same email as an existing user (e.g., testuser@example.com from registration tests). The OAuth provider will be linked to that account."
+          },
+          "response": []
+        },
+        {
+          "name": "Google OAuth - Browser Flow",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/google",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "google"]
+            },
+            "description": "Start real Google OAuth flow.\n\n**Note:** This endpoint redirects to Google's login page. Open this URL in a browser to test the full OAuth flow.\n\n**Requirements:**\n- GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set in .env\n- Callback URL must be configured in Google Console"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. Rate Limiting",
+      "item": [
+        {
+          "name": "Rate Limit Test - Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"ratelimit@example.com\",\n    \"password\": \"TestPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Test rate limiting on auth endpoints.\n\n**Rate Limits:**\n- Auth endpoints: 5 requests per 15 minutes\n\n**To test:**\n1. Run this request multiple times quickly\n2. After 5 attempts, should receive 429 Too Many Requests"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

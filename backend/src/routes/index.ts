@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from 'express';
+import authRoutes from './auth.routes.js';
 
 const router = Router();
 
@@ -14,8 +15,8 @@ router.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// Route modules will be added here
-// router.use('/auth', authRoutes);
+// Route modules
+router.use('/auth', authRoutes);
 // router.use('/users', userRoutes);
 // router.use('/projects', projectRoutes);
 // router.use('/tasks', taskRoutes);

@@ -1,5 +1,5 @@
 // Prisma Schema for Tasktrox
-// This is the initial schema - will be expanded in Phase 2
+// Phase 2: Complete Database Schema
 
 generator client {
   provider = "prisma-client-js"
@@ -10,27 +10,259 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model - will be expanded with auth in Phase 2
+// ============ USER & AUTH ============
+
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String
-  passwordHash  String?
-  avatar        String?
+  id         String    @id @default(cuid())
+  email      String    @unique
+  name       String
+  avatar     String?
+  password   String?   // null for OAuth users
+  provider   String?   // google, apple, local
+  providerId String?   // OAuth provider ID
 
-  // OAuth
-  googleId      String?   @unique
-  appleId       String?   @unique
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  // Timestamps
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  lastLoginAt   DateTime?
+  // Relations
+  ownedProjects Project[]       @relation("ProjectOwner")
+  memberships   ProjectMember[]
+  assignedTasks TaskAssignee[]
+  createdTasks  Task[]          @relation("TaskCreator")
+  comments      Comment[]
+  activities    Activity[]
+  attachments   Attachment[]    @relation("AttachmentUploader")
 
-  // Relations (will be added in Phase 3)
-  // projects      Project[]
-  // tasks         Task[]
-  // comments      Comment[]
-
+  @@index([email])
+  @@index([provider, providerId])
   @@map("users")
+}
+
+// ============ PROJECT ============
+
+model Project {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  color       String    @default("#6366f1")
+  icon        String?
+
+  ownerId String
+  owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  // Relations
+  columns    Column[]
+  members    ProjectMember[]
+  labels     Label[]
+  activities Activity[]
+
+  @@index([ownerId])
+  @@index([deletedAt])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_members")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// ============ BOARD ============
+
+model Column {
+  id    String  @id @default(cuid())
+  name  String
+  order Int
+  color String?
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tasks Task[]
+
+  @@index([projectId])
+  @@index([projectId, order])
+  @@map("columns")
+}
+
+// ============ TASK ============
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  order       Int
+  priority    Priority?
+  dueDate     DateTime?
+
+  columnId String
+  column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation("TaskCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  // Relations
+  labels      TaskLabel[]
+  assignees   TaskAssignee[]
+  attachments Attachment[]
+  comments    Comment[]
+  activities  Activity[]
+
+  @@index([columnId])
+  @@index([columnId, order])
+  @@index([createdById])
+  @@index([dueDate])
+  @@index([deletedAt])
+  @@map("tasks")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Label {
+  id    String @id @default(cuid())
+  name  String
+  color String
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  // Relations
+  tasks TaskLabel[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@map("labels")
+}
+
+model TaskLabel {
+  taskId  String
+  task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  labelId String
+  label   Label  @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, labelId])
+  @@map("task_labels")
+}
+
+model TaskAssignee {
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@id([taskId, userId])
+  @@map("task_assignees")
+}
+
+// ============ ATTACHMENTS & COMMENTS ============
+
+model Attachment {
+  id           String @id @default(cuid())
+  filename     String
+  originalName String
+  url          String
+  size         Int    // bytes
+  mimeType     String
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  uploadedById String
+  uploadedBy   User   @relation("AttachmentUploader", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+  @@map("attachments")
+}
+
+model Comment {
+  id      String @id @default(cuid())
+  content String
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([taskId])
+  @@index([userId])
+  @@map("comments")
+}
+
+// ============ ACTIVITY LOG ============
+
+model Activity {
+  id       String @id @default(cuid())
+  action   String // task.created, task.moved, task.updated, etc.
+  metadata Json?  // Additional context
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+// ============ REFRESH TOKENS ============
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }

@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import { initializePassport } from './config/passport.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFoundHandler } from './middleware/not-found.js';
 import routes from './routes/index.js';
@@ -26,6 +27,9 @@ const limiter = rateLimit({
   message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
 });
 app.use('/api', limiter);
+
+// Initialize Passport
+app.use(initializePassport());
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
