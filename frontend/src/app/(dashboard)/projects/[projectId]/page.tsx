@@ -3,17 +3,10 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Settings, Plus, LayoutGrid, List, Columns3, Loader2, AlertCircle } from 'lucide-react';
+import { Settings, LayoutGrid, List, Columns3, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getProject, type Project } from '@/lib/api/projects';
-
-// Column colors mapping
-const columnColors: Record<string, string> = {
-  'To Do': 'bg-column-todo',
-  'In Progress': 'bg-column-in-progress',
-  'Review': 'bg-column-in-review',
-  'Done': 'bg-column-completed',
-};
+import { Board, type Task, type ColumnWithTasks } from '@/components/board';
 
 type ViewMode = 'board' | 'list' | 'grid';
 
@@ -135,38 +128,30 @@ export default function ProjectPage({ params }: ProjectPageProps) {
 
       {/* Board View */}
       <div className="flex-1 overflow-x-auto p-4">
-        <div className="flex gap-4 h-full min-w-max">
-          {columns.map((column) => (
-            <div
-              key={column.id}
-              className="flex flex-col w-[300px] bg-gray-50 rounded-xl"
-            >
-              {/* Column Header */}
-              <div className="column-header">
-                <div className="column-header-title">
-                  <span className={cn('size-2 rounded-full', columnColors[column.name] || 'bg-gray-400')} />
-                  <span>{column.name}</span>
-                </div>
-                <span className="column-header-count">0</span>
-              </div>
-
-              {/* Column Content - Empty for now, tasks will be added later */}
-              <div className="flex-1 px-3 pb-3 space-y-2">
-                {/* Add Task Button */}
-                <button className="add-task-button">
-                  <Plus className="size-4" />
-                  <span>Add Task</span>
-                </button>
-              </div>
-            </div>
-          ))}
-
-          {/* Add Column Button */}
-          <button className="flex items-center justify-center gap-2 w-[300px] h-12 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-500 text-sm transition-colors">
-            <Plus className="size-4" />
-            Add Column
-          </button>
-        </div>
+        <Board
+          columns={columns.map((col) => ({ ...col, tasks: [] })) as ColumnWithTasks[]}
+          projectId={projectId}
+          onAddTask={(columnId, title) => {
+            // TODO: Implement API call (Phase 3.7)
+            console.log('Add task to column:', columnId, 'with title:', title);
+          }}
+          onAddColumn={() => {
+            // TODO: Implement add column (Phase 3.6.5)
+            console.log('Add column');
+          }}
+          onEditColumn={(columnId, name) => {
+            // TODO: Implement edit column (Phase 3.6.3)
+            console.log('Edit column:', columnId, name);
+          }}
+          onDeleteColumn={(columnId) => {
+            // TODO: Implement delete column (Phase 3.6.5)
+            console.log('Delete column:', columnId);
+          }}
+          onTaskClick={(task) => {
+            // TODO: Implement task detail modal (Phase 3.7)
+            console.log('Task clicked:', task);
+          }}
+        />
       </div>
     </div>
   );
