@@ -1,5 +1,8 @@
 import { Router, type Request, type Response } from 'express';
 import authRoutes from './auth.routes.js';
+import projectRoutes from './project.routes.js';
+import columnRoutes from './column.routes.js';
+import taskRoutes from './task.routes.js';
 
 const router = Router();
 
@@ -17,8 +20,9 @@ router.get('/', (_req: Request, res: Response) => {
 
 // Route modules
 router.use('/auth', authRoutes);
+router.use('/projects', projectRoutes);
+router.use('/', columnRoutes); // Column routes handle /projects/:projectId/columns and /columns/:columnId
+router.use('/', taskRoutes); // Task routes handle /columns/:columnId/tasks and /tasks/:taskId
 // router.use('/users', userRoutes);
-// router.use('/projects', projectRoutes);
-// router.use('/tasks', taskRoutes);
 
 export default router;

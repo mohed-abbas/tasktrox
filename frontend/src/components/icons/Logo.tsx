@@ -8,9 +8,9 @@ interface LogoProps {
 export function Logo({ className, showText = true }: LogoProps) {
   return (
     <svg
-      width={showText ? '191' : '51'}
-      height="44"
-      viewBox={showText ? '0 0 191 44' : '0 0 51 44'}
+      width={showText ? '191' : '30'}
+      height={showText ? '44' : '44'}
+      viewBox={showText ? '0 0 191 44' : '21 0 30 44'}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn('shrink-0', className)}
