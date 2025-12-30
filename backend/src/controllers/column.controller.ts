@@ -4,6 +4,7 @@ import type {
   CreateColumnInput,
   UpdateColumnInput,
   ReorderColumnInput,
+  ReorderProjectColumnInput,
 } from '../validators/column.validator.js';
 
 export class ColumnController {
@@ -194,6 +195,38 @@ export class ColumnController {
           error: {
             code: 'REORDER_FAILED',
             message: 'Could not reorder column. Check column ID and order value.',
+          },
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: { column },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * PATCH /projects/:projectId/columns/:columnId/reorder
+   * Reorder a column within a project (project-scoped route)
+   */
+  static async reorderInProject(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const columnId = req.params.columnId as string;
+      const { order } = req.body as ReorderProjectColumnInput;
+
+      const column = await ColumnService.reorderColumn(columnId, userId, order);
+
+      if (!column) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Column not found or you do not have permission to reorder it',
           },
         });
         return;

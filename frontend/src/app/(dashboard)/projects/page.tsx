@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Plus, FolderKanban, Loader2 } from 'lucide-react';
 import { ProjectCard, NewProjectModal } from '@/components/project';
 import { getProjects, createProject, type Project } from '@/lib/api/projects';
@@ -23,10 +24,18 @@ export default function ProjectsPage() {
   // Create project mutation
   const createMutation = useMutation({
     mutationFn: createProject,
-    onSuccess: () => {
+    onSuccess: (project) => {
       // Invalidate and refetch projects
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setIsModalOpen(false);
+      toast.success('Project created', {
+        description: `"${project.name}" has been created successfully`,
+      });
+    },
+    onError: (err) => {
+      toast.error('Failed to create project', {
+        description: err instanceof Error ? err.message : 'Please try again',
+      });
     },
   });
 

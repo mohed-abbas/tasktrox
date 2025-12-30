@@ -1,14 +1,20 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
 function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshAuth } = useAuth();
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
+    // Prevent double-processing in strict mode
+    if (hasProcessed.current) return;
+
     const token = searchParams.get('token');
     const error = searchParams.get('error');
 
@@ -18,13 +24,19 @@ function CallbackContent() {
     }
 
     if (token) {
-      // Store token and redirect to dashboard
+      hasProcessed.current = true;
+
+      // Store token first
       localStorage.setItem('tasktrox_access_token', token);
-      router.push('/dashboard');
+
+      // Refresh auth state to pick up the new token, then navigate
+      refreshAuth().then(() => {
+        router.push('/dashboard');
+      });
     } else {
       router.push('/login?error=no_token');
     }
-  }, [router, searchParams]);
+  }, [router, searchParams, refreshAuth]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50">

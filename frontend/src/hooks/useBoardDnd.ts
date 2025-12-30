@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   closestCorners,
+  pointerWithin,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -12,7 +13,10 @@ import {
   type DragOverEvent,
   type CollisionDetection,
 } from '@dnd-kit/core';
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import {
+  sortableKeyboardCoordinates,
+  arrayMove,
+} from '@dnd-kit/sortable';
 import type { Task, ColumnWithTasks } from '@/components/board/Board';
 
 // Active drag item state
@@ -59,9 +63,47 @@ export interface UseBoardDndReturn {
   handleDragStart: (event: DragStartEvent) => void;
   handleDragOver: (event: DragOverEvent) => void;
   handleDragEnd: (event: DragEndEvent) => void;
-  // State setters for external sync
-  setLocalColumns: React.Dispatch<React.SetStateAction<ColumnWithTasks[]>>;
 }
+
+/**
+ * Custom collision detection that combines multiple strategies:
+ * 1. pointerWithin - Best for dropping into empty columns
+ * 2. closestCorners - Best for precise task reordering
+ *
+ * This hybrid approach makes empty columns easier to target
+ * while maintaining precise task-to-task ordering.
+ */
+const customCollisionDetection: CollisionDetection = (args) => {
+  // First, check if pointer is directly within any droppable (best for columns)
+  const pointerCollisions = pointerWithin(args);
+
+  // If we have pointer collisions, prioritize column droppables for empty column drops
+  if (pointerCollisions.length > 0) {
+    // Check if any collision is a column droppable (for empty columns)
+    const columnCollision = pointerCollisions.find(
+      (collision) => collision.id.toString().startsWith('column-droppable-')
+    );
+
+    // If hovering over a column droppable and there are task collisions too,
+    // prefer the task collision for precise ordering
+    const taskCollision = pointerCollisions.find(
+      (collision) => !collision.id.toString().startsWith('column-')
+    );
+
+    if (taskCollision) {
+      return [taskCollision];
+    }
+
+    if (columnCollision) {
+      return [columnCollision];
+    }
+
+    return pointerCollisions;
+  }
+
+  // Fall back to closest corners for edge cases
+  return closestCorners(args);
+};
 
 /**
  * Custom hook for managing Kanban board drag-and-drop functionality.
@@ -73,6 +115,7 @@ export interface UseBoardDndReturn {
  * - Task reordering within columns
  * - Optimistic local state updates
  * - Configurable activation distance
+ * - Custom collision detection for better empty column targeting
  */
 export function useBoardDnd({
   columns,
@@ -83,6 +126,11 @@ export function useBoardDnd({
 
   // Local optimistic state for columns
   const [localColumns, setLocalColumns] = useState<ColumnWithTasks[]>(columns);
+
+  // Sync local state when props change (e.g., from React Query refetch)
+  useEffect(() => {
+    setLocalColumns(columns);
+  }, [columns]);
 
   // Active drag item state
   const [activeItem, setActiveItem] = useState<ActiveDragItem | null>(null);
@@ -163,15 +211,7 @@ export function useBoardDnd({
 
   // Handle drag over - for cross-column movement preview (future enhancement)
   const handleDragOver = useCallback(
-    (event: DragOverEvent) => {
-      const { active, over } = event;
-      if (!over) return;
-
-      const activeData = active.data.current;
-
-      // Only handle task movement between columns
-      if (activeData?.type !== 'task') return;
-
+    (_event: DragOverEvent) => {
       // Future: Add real-time preview state for cross-column movement
       // For now, movement is handled in handleDragEnd
     },
@@ -197,36 +237,24 @@ export function useBoardDnd({
         const overColumnId = overData?.columnId;
 
         if (activeColumnId && overColumnId && activeColumnId !== overColumnId) {
-          const activeIndex = sortedColumns.findIndex(
-            (col) => col.id === activeColumnId
-          );
-          const overIndex = sortedColumns.findIndex(
-            (col) => col.id === overColumnId
-          );
+          // Calculate new order before state update
+          const sorted = [...localColumns].sort((a, b) => a.order - b.order);
+          const activeIndex = sorted.findIndex((col) => col.id === activeColumnId);
+          const overIndex = sorted.findIndex((col) => col.id === overColumnId);
 
-          if (activeIndex !== -1 && overIndex !== -1) {
-            // Optimistically update local state
-            setLocalColumns((prev) => {
-              const newColumns = [...prev];
-              const [movedColumn] = newColumns.splice(
-                newColumns.findIndex((col) => col.id === activeColumnId),
-                1
-              );
-              const targetIndex = newColumns.findIndex(
-                (col) => col.id === overColumnId
-              );
-              newColumns.splice(targetIndex, 0, movedColumn);
+          if (activeIndex === -1 || overIndex === -1) return;
 
-              // Update order values
-              return newColumns.map((col, index) => ({
-                ...col,
-                order: index,
-              }));
-            });
+          // Update local state for immediate visual feedback
+          setLocalColumns(() => {
+            const reordered = arrayMove(sorted, activeIndex, overIndex);
+            return reordered.map((col, index) => ({
+              ...col,
+              order: index,
+            }));
+          });
 
-            // Call callback for API sync
-            onReorderColumn?.(activeColumnId, overIndex);
-          }
+          // Call callback for API sync immediately (not in setTimeout)
+          onReorderColumn?.(activeColumnId, overIndex);
         }
         return;
       }
@@ -234,93 +262,126 @@ export function useBoardDnd({
       // Handle task movement
       if (activeData?.type === 'task') {
         const taskId = active.id as string;
-        const sourceColumnId = findColumnByTaskId(taskId);
 
-        if (!sourceColumnId) return;
+        setLocalColumns((currentColumns) => {
+          // Find source column
+          let sourceColumnId: string | undefined;
+          for (const column of currentColumns) {
+            if (column.tasks?.some((t) => t.id === taskId)) {
+              sourceColumnId = column.id;
+              break;
+            }
+          }
 
-        // Determine target column and position
-        let targetColumnId = sourceColumnId;
-        let newOrder = 0;
+          if (!sourceColumnId) return currentColumns;
 
-        if (overData?.type === 'column') {
-          // Dropped on a column (empty area or column header)
-          targetColumnId = overData.columnId;
-          const targetColumn = localColumns.find(
-            (col) => col.id === targetColumnId
-          );
-          newOrder = targetColumn?.tasks?.length || 0;
-        } else if (overData?.type === 'task') {
-          // Dropped on another task
-          const overTaskId = over.id as string;
-          targetColumnId = findColumnByTaskId(overTaskId) || sourceColumnId;
-          const targetColumn = localColumns.find(
-            (col) => col.id === targetColumnId
-          );
-          const overTaskIndex =
-            targetColumn?.tasks?.findIndex((t) => t.id === overTaskId) ?? 0;
-          newOrder = overTaskIndex;
-        }
+          // Determine target column and position
+          let targetColumnId = sourceColumnId;
+          let newOrder = 0;
 
-        // Get current task order for comparison
-        const sourceColumn = localColumns.find(
-          (col) => col.id === sourceColumnId
-        );
-        const currentTaskOrder =
-          sourceColumn?.tasks?.find((t) => t.id === taskId)?.order ?? -1;
-
-        // Only trigger if position actually changed
-        if (sourceColumnId !== targetColumnId || newOrder !== currentTaskOrder) {
-          // Optimistically update local state for task movement
-          setLocalColumns((prev) => {
-            const newColumns = prev.map((col) => ({
-              ...col,
-              tasks: [...(col.tasks || [])],
-            }));
-
-            // Find and remove task from source column
-            const sourceCol = newColumns.find(
-              (col) => col.id === sourceColumnId
-            );
-            const taskIndex =
-              sourceCol?.tasks.findIndex((t) => t.id === taskId) ?? -1;
-            if (!sourceCol || taskIndex === -1) return prev;
-
-            const [movedTask] = sourceCol.tasks.splice(taskIndex, 1);
-
-            // Add task to target column at the right position
-            const targetCol = newColumns.find(
+          if (overData?.type === 'column') {
+            // Dropped on a column (empty area or column header)
+            targetColumnId = overData.columnId;
+            const targetColumn = currentColumns.find(
               (col) => col.id === targetColumnId
             );
-            if (!targetCol) return prev;
+            newOrder = targetColumn?.tasks?.length || 0;
+          } else if (overData?.type === 'task') {
+            // Dropped on another task
+            const overTaskId = over.id as string;
+            // Find which column contains the over task
+            for (const column of currentColumns) {
+              if (column.tasks?.some((t) => t.id === overTaskId)) {
+                targetColumnId = column.id;
+                break;
+              }
+            }
+            const targetColumn = currentColumns.find(
+              (col) => col.id === targetColumnId
+            );
+            const overTaskIndex =
+              targetColumn?.tasks?.findIndex((t) => t.id === overTaskId) ?? 0;
+            newOrder = overTaskIndex;
+          }
 
-            movedTask.columnId = targetColumnId;
-            movedTask.order = newOrder;
-            targetCol.tasks.splice(newOrder, 0, movedTask);
+          // Get current task index
+          const sourceColumn = currentColumns.find(
+            (col) => col.id === sourceColumnId
+          );
+          const currentTaskIndex =
+            sourceColumn?.tasks?.findIndex((t) => t.id === taskId) ?? -1;
 
-            // Update order values for affected columns
-            sourceCol.tasks.forEach((t, i) => (t.order = i));
-            targetCol.tasks.forEach((t, i) => (t.order = i));
+          if (currentTaskIndex === -1) return currentColumns;
+
+          // Same column reordering - use arrayMove for correct behavior
+          if (sourceColumnId === targetColumnId) {
+            // Check if same position (no change needed)
+            if (currentTaskIndex === newOrder) {
+              return currentColumns;
+            }
+
+            // Create new columns with arrayMove for the target column
+            const newColumns = currentColumns.map((col) => {
+              if (col.id === targetColumnId) {
+                const reorderedTasks = arrayMove(
+                  [...(col.tasks || [])],
+                  currentTaskIndex,
+                  newOrder
+                );
+                // Update order values
+                reorderedTasks.forEach((t, i) => (t.order = i));
+                return { ...col, tasks: reorderedTasks };
+              }
+              return col;
+            });
+
+            // Call callback for API sync
+            setTimeout(() => {
+              onMoveTask?.(taskId, sourceColumnId!, targetColumnId, newOrder);
+            }, 0);
 
             return newColumns;
-          });
+          }
+
+          // Cross-column movement
+          const newColumns = currentColumns.map((col) => ({
+            ...col,
+            tasks: [...(col.tasks || [])],
+          }));
+
+          // Find and remove task from source column
+          const sourceCol = newColumns.find((col) => col.id === sourceColumnId);
+          if (!sourceCol) return currentColumns;
+
+          const [movedTask] = sourceCol.tasks.splice(currentTaskIndex, 1);
+
+          // Add task to target column at the right position
+          const targetCol = newColumns.find((col) => col.id === targetColumnId);
+          if (!targetCol) return currentColumns;
+
+          movedTask.columnId = targetColumnId;
+          movedTask.order = newOrder;
+          targetCol.tasks.splice(newOrder, 0, movedTask);
+
+          // Update order values for affected columns
+          sourceCol.tasks.forEach((t, i) => (t.order = i));
+          targetCol.tasks.forEach((t, i) => (t.order = i));
 
           // Call callback for API sync
-          onMoveTask?.(taskId, sourceColumnId, targetColumnId, newOrder);
-        }
+          setTimeout(() => {
+            onMoveTask?.(taskId, sourceColumnId!, targetColumnId, newOrder);
+          }, 0);
+
+          return newColumns;
+        });
       }
     },
-    [
-      localColumns,
-      sortedColumns,
-      findColumnByTaskId,
-      onMoveTask,
-      onReorderColumn,
-    ]
+    [localColumns, onMoveTask, onReorderColumn]
   );
 
   return {
     sensors,
-    collisionDetection: closestCorners,
+    collisionDetection: customCollisionDetection,
     activeItem,
     localColumns,
     sortedColumns,
@@ -328,7 +389,6 @@ export function useBoardDnd({
     handleDragStart,
     handleDragOver,
     handleDragEnd,
-    setLocalColumns,
   };
 }
 

@@ -1,16 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
 import { DndContext, DragOverlay } from '@dnd-kit/core';
 import {
   SortableContext,
   horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useBoardDnd } from '@/hooks/useBoardDnd';
 import { SortableColumn } from './SortableColumn';
 import { TaskCard } from './TaskCard';
+import { AddColumn } from './AddColumn';
 import type { Column as ColumnType } from '@/lib/api/projects';
 
 // Types for tasks (will be expanded in 3.6.4)
@@ -38,7 +37,7 @@ interface BoardProps {
   columns: ColumnWithTasks[];
   projectId: string;
   onAddTask?: (columnId: string, title: string) => void;
-  onAddColumn?: () => void;
+  onAddColumn?: (name: string) => void;
   onEditColumn?: (columnId: string, name: string) => void;
   onDeleteColumn?: (columnId: string) => void;
   onTaskClick?: (task: Task) => void;
@@ -64,13 +63,11 @@ export function Board({
     sensors,
     collisionDetection,
     activeItem,
-    localColumns,
     sortedColumns,
     columnIds,
     handleDragStart,
     handleDragOver,
     handleDragEnd,
-    setLocalColumns,
   } = useBoardDnd({
     columns,
     callbacks: {
@@ -78,11 +75,6 @@ export function Board({
       onReorderColumn,
     },
   });
-
-  // Sync local state when props change (e.g., from React Query refetch)
-  useEffect(() => {
-    setLocalColumns(columns);
-  }, [columns, setLocalColumns]);
 
   // Loading skeleton
   if (isLoading) {
@@ -127,15 +119,13 @@ export function Board({
           <h3 className="text-base font-medium text-gray-800 mb-2">
             No columns yet
           </h3>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 mb-6">
             Start by adding your first column to organize your tasks.
           </p>
-          <button
-            onClick={onAddColumn}
-            className="btn-primary"
-          >
-            Add First Column
-          </button>
+          <AddColumn
+            onSubmit={(name) => onAddColumn?.(name)}
+            placeholder="e.g., To Do, In Progress, Done..."
+          />
         </div>
       </div>
     );
@@ -162,18 +152,13 @@ export function Board({
               onEditColumn={() => onEditColumn?.(column.id, column.name)}
               onDeleteColumn={() => onDeleteColumn?.(column.id)}
               onTaskClick={onTaskClick}
+              isDraggingTask={activeItem?.type === 'task'}
             />
           ))}
         </SortableContext>
 
         {/* Add Column Button */}
-        <button
-          onClick={onAddColumn}
-          className="flex items-center justify-center gap-2 w-[300px] h-12 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-500 text-sm transition-colors flex-shrink-0"
-        >
-          <Plus className="size-4" />
-          Add Column
-        </button>
+        <AddColumn onSubmit={(name) => onAddColumn?.(name)} />
       </div>
 
       {/* Drag Overlay - Shows preview of dragged item */}

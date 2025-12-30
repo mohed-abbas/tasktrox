@@ -10,7 +10,88 @@ import type {
 } from '../validators/task.validator.js';
 
 export class TaskController {
-  // ============ TASK CRUD ============
+  // ============ PROJECT-SCOPED TASK ROUTES ============
+
+  /**
+   * GET /projects/:projectId/tasks
+   * List all tasks for a project
+   */
+  static async listByProject(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const projectId = req.params.projectId as string;
+      const query: ListTasksQuery = {
+        includeDeleted: req.query.includeDeleted === 'true',
+        priority: req.query.priority as ListTasksQuery['priority'],
+        search: req.query.search as string | undefined,
+      };
+
+      const tasks = await TaskService.getProjectTasks(projectId, userId, query);
+
+      if (tasks === null) {
+        res.status(404).json({
+          success: false,
+          error: {
+            code: 'PROJECT_NOT_FOUND',
+            message: 'Project not found or you do not have access',
+          },
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: { tasks },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /projects/:projectId/tasks
+   * Create a new task in a project (columnId in body)
+   */
+  static async createInProject(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const projectId = req.params.projectId as string;
+      const { columnId, ...data } = req.body as CreateTaskInput & { columnId: string };
+
+      if (!columnId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'columnId is required in request body',
+          },
+        });
+        return;
+      }
+
+      const task = await TaskService.createTaskInProject(projectId, columnId, userId, data);
+
+      if (!task) {
+        res.status(403).json({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to create tasks in this project or column does not exist',
+          },
+        });
+        return;
+      }
+
+      res.status(201).json({
+        success: true,
+        data: { task },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ============ COLUMN-SCOPED TASK ROUTES ============
 
   /**
    * GET /columns/:columnId/tasks

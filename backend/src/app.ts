@@ -21,12 +21,12 @@ app.use(
 );
 
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
-  message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
-});
-app.use('/api', limiter);
+// const limiter = rateLimit({
+//   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
+//   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+//   message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
+// });
+// app.use('/api', limiter);
 
 // Initialize Passport
 app.use(initializePassport());

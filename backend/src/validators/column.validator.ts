@@ -74,6 +74,20 @@ export const reorderColumnSchema = z.object({
   }),
 });
 
+/**
+ * PATCH /projects/:projectId/columns/:columnId/reorder
+ * Reorder a column within a project (project-scoped route)
+ */
+export const reorderProjectColumnSchema = z.object({
+  params: z.object({
+    projectId: z.string().min(1, 'Project ID is required'),
+    columnId: z.string().min(1, 'Column ID is required'),
+  }),
+  body: z.object({
+    order: z.number().int().min(0, 'Order must be a non-negative integer'),
+  }),
+});
+
 // ============ TYPE EXPORTS ============
 
 export type ListColumnsParams = z.infer<typeof listColumnsSchema>['params'];
@@ -84,3 +98,5 @@ export type UpdateColumnParams = z.infer<typeof updateColumnSchema>['params'];
 export type DeleteColumnParams = z.infer<typeof deleteColumnSchema>['params'];
 export type ReorderColumnInput = z.infer<typeof reorderColumnSchema>['body'];
 export type ReorderColumnParams = z.infer<typeof reorderColumnSchema>['params'];
+export type ReorderProjectColumnParams = z.infer<typeof reorderProjectColumnSchema>['params'];
+export type ReorderProjectColumnInput = z.infer<typeof reorderProjectColumnSchema>['body'];

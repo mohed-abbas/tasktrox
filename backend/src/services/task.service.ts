@@ -32,6 +32,72 @@ export class TaskService {
   // ============ TASK CRUD ============
 
   /**
+   * Get all tasks for a project (across all columns)
+   */
+  static async getProjectTasks(
+    projectId: string,
+    userId: string,
+    options: ListTasksQuery = {}
+  ): Promise<TaskWithRelations[] | null> {
+    // Check user has access to the project
+    const hasAccess = await ProjectService.checkProjectAccess(projectId, userId);
+    if (!hasAccess) {
+      return null;
+    }
+
+    const whereClause: Record<string, unknown> = {
+      column: { projectId },
+      ...(options.includeDeleted ? {} : { deletedAt: null }),
+      ...(options.priority && { priority: options.priority }),
+      ...(options.search && {
+        OR: [
+          { title: { contains: options.search, mode: 'insensitive' } },
+          { description: { contains: options.search, mode: 'insensitive' } },
+        ],
+      }),
+    };
+
+    return prisma.task.findMany({
+      where: whereClause,
+      include: {
+        column: {
+          select: { id: true, name: true, projectId: true },
+        },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatar: true },
+        },
+        _count: {
+          select: { assignees: true, attachments: true, comments: true },
+        },
+      },
+      orderBy: [{ column: { order: 'asc' } }, { order: 'asc' }],
+    });
+  }
+
+  /**
+   * Create a task from project scope (columnId in body)
+   */
+  static async createTaskInProject(
+    projectId: string,
+    columnId: string,
+    userId: string,
+    data: CreateTaskInput
+  ): Promise<TaskWithRelations | null> {
+    // Verify the column belongs to this project
+    const column = await prisma.column.findUnique({
+      where: { id: columnId },
+      select: { projectId: true },
+    });
+
+    if (!column || column.projectId !== projectId) {
+      return null;
+    }
+
+    // Use the existing createTask method
+    return this.createTask(columnId, userId, data);
+  }
+
+  /**
    * Get all tasks for a column
    */
   static async getColumnTasks(

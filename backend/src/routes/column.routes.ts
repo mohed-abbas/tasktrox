@@ -8,6 +8,7 @@ import {
   updateColumnSchema,
   deleteColumnSchema,
   reorderColumnSchema,
+  reorderProjectColumnSchema,
 } from '../validators/column.validator.js';
 
 const router = Router();
@@ -37,6 +38,16 @@ router.post(
   '/projects/:projectId/columns',
   validate(createColumnSchema),
   ColumnController.create
+);
+
+/**
+ * PATCH /projects/:projectId/columns/:columnId/reorder
+ * Reorder a column within a project (project-scoped route)
+ */
+router.patch(
+  '/projects/:projectId/columns/:columnId/reorder',
+  validate(reorderProjectColumnSchema),
+  ColumnController.reorderInProject
 );
 
 // ============ COLUMN-SPECIFIC ROUTES ============

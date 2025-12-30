@@ -11,12 +11,57 @@ import {
   moveTaskSchema,
   reorderTaskSchema,
   bulkDeleteSchema,
+  listProjectTasksSchema,
+  createProjectTaskSchema,
+  getProjectTaskSchema,
+  updateProjectTaskSchema,
+  deleteProjectTaskSchema,
+  moveProjectTaskSchema,
 } from '../validators/task.validator.js';
 
 const router = Router();
 
 // All task routes require authentication
 router.use(authenticate);
+
+// ============ PROJECT-SCOPED TASK ROUTES ============
+// These routes allow operating on tasks through the project endpoint
+
+/**
+ * GET /projects/:projectId/tasks
+ * List all tasks for a project (across all columns)
+ */
+router.get('/projects/:projectId/tasks', validate(listProjectTasksSchema), TaskController.listByProject);
+
+/**
+ * POST /projects/:projectId/tasks
+ * Create a new task in a project (columnId in body)
+ */
+router.post('/projects/:projectId/tasks', validate(createProjectTaskSchema), TaskController.createInProject);
+
+/**
+ * GET /projects/:projectId/tasks/:taskId
+ * Get a single task by ID (validates task belongs to project)
+ */
+router.get('/projects/:projectId/tasks/:taskId', validate(getProjectTaskSchema), TaskController.get);
+
+/**
+ * PATCH /projects/:projectId/tasks/:taskId
+ * Update a task
+ */
+router.patch('/projects/:projectId/tasks/:taskId', validate(updateProjectTaskSchema), TaskController.update);
+
+/**
+ * DELETE /projects/:projectId/tasks/:taskId
+ * Soft delete a task
+ */
+router.delete('/projects/:projectId/tasks/:taskId', validate(deleteProjectTaskSchema), TaskController.delete);
+
+/**
+ * PATCH /projects/:projectId/tasks/:taskId/move
+ * Move a task to a different column and/or position
+ */
+router.patch('/projects/:projectId/tasks/:taskId/move', validate(moveProjectTaskSchema), TaskController.move);
 
 // ============ COLUMN-SCOPED TASK ROUTES ============
 // These are for listing and creating tasks in a column

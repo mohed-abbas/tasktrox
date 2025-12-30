@@ -1,12 +1,13 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Settings, LayoutGrid, List, Columns3, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getProject, type Project } from '@/lib/api/projects';
 import { Board, type Task, type ColumnWithTasks } from '@/components/board';
+import { useColumns, useTasks } from '@/hooks';
 
 type ViewMode = 'board' | 'list' | 'grid';
 
@@ -27,6 +28,34 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     queryKey: ['project', projectId],
     queryFn: () => getProject(projectId),
   });
+
+  // Column operations with optimistic updates
+  const {
+    createColumn,
+    updateColumn,
+    deleteColumn,
+    reorderColumn,
+  } = useColumns({ projectId });
+
+  // Task operations with optimistic updates
+  const {
+    tasksByColumn,
+    isLoadingTasks,
+    createTask,
+    moveTask,
+  } = useTasks({ projectId });
+
+  // Combine columns with their tasks for the Board component
+  // Must be called before any early returns (Rules of Hooks)
+  const columns = project?.columns || [];
+  const columnsWithTasks: ColumnWithTasks[] = useMemo(() => {
+    return columns
+      .map((col) => ({
+        ...col,
+        tasks: (tasksByColumn[col.id] || []) as Task[],
+      }))
+      .sort((a, b) => a.order - b.order);
+  }, [columns, tasksByColumn]);
 
   // Loading state
   if (isLoading) {
@@ -56,8 +85,6 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       </div>
     );
   }
-
-  const columns = project.columns || [];
 
   return (
     <div className="flex flex-col h-full -m-4">
@@ -129,27 +156,49 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       {/* Board View */}
       <div className="flex-1 overflow-x-auto p-4">
         <Board
-          columns={columns.map((col) => ({ ...col, tasks: [] })) as ColumnWithTasks[]}
+          columns={columnsWithTasks}
           projectId={projectId}
+          isLoading={isLoadingTasks}
           onAddTask={(columnId, title) => {
-            // TODO: Implement API call (Phase 3.7)
-            console.log('Add task to column:', columnId, 'with title:', title);
+            createTask({
+              title,
+              columnId,
+            });
           }}
-          onAddColumn={() => {
-            // TODO: Implement add column (Phase 3.6.5)
-            console.log('Add column');
+          onAddColumn={(name) => {
+            createColumn({
+              name,
+              order: columns.length,
+            });
           }}
           onEditColumn={(columnId, name) => {
-            // TODO: Implement edit column (Phase 3.6.3)
-            console.log('Edit column:', columnId, name);
+            updateColumn({
+              columnId,
+              data: { name },
+            });
           }}
           onDeleteColumn={(columnId) => {
-            // TODO: Implement delete column (Phase 3.6.5)
-            console.log('Delete column:', columnId);
+            deleteColumn(columnId);
           }}
           onTaskClick={(task) => {
             // TODO: Implement task detail modal (Phase 3.7)
             console.log('Task clicked:', task);
+          }}
+          onMoveTask={(taskId, sourceColumnId, targetColumnId, newOrder) => {
+            moveTask({
+              taskId,
+              sourceColumnId,
+              data: {
+                targetColumnId: targetColumnId,
+                order: newOrder,
+              },
+            });
+          }}
+          onReorderColumn={(columnId, newOrder) => {
+            reorderColumn({
+              columnId,
+              newOrder,
+            });
           }}
         />
       </div>

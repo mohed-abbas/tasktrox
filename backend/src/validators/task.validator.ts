@@ -14,6 +14,15 @@ export const columnIdParamSchema = z.object({
   columnId: z.string().min(1, 'Column ID is required'),
 });
 
+export const projectIdParamSchema = z.object({
+  projectId: z.string().min(1, 'Project ID is required'),
+});
+
+export const projectTaskIdParamSchema = z.object({
+  projectId: z.string().min(1, 'Project ID is required'),
+  taskId: z.string().min(1, 'Task ID is required'),
+});
+
 // ============ QUERY SCHEMAS ============
 
 export const listTasksQuerySchema = z.object({
@@ -44,6 +53,11 @@ export const createTaskBodySchema = z.object({
     .optional()
     .or(z.literal('')),
   order: z.number().int().min(0).optional(),
+});
+
+// Body schema for creating task via project endpoint (requires columnId)
+export const createTaskInProjectBodySchema = createTaskBodySchema.extend({
+  columnId: z.string().min(1, 'Column ID is required'),
 });
 
 export const updateTaskBodySchema = z.object({
@@ -119,6 +133,36 @@ export const reorderTaskSchema = z.object({
 
 export const bulkDeleteSchema = z.object({
   body: bulkDeleteBodySchema,
+});
+
+// ============ PROJECT-SCOPED COMBINED SCHEMAS ============
+
+export const listProjectTasksSchema = z.object({
+  params: projectIdParamSchema,
+  query: listTasksQuerySchema,
+});
+
+export const createProjectTaskSchema = z.object({
+  params: projectIdParamSchema,
+  body: createTaskInProjectBodySchema,
+});
+
+export const getProjectTaskSchema = z.object({
+  params: projectTaskIdParamSchema,
+});
+
+export const updateProjectTaskSchema = z.object({
+  params: projectTaskIdParamSchema,
+  body: updateTaskBodySchema,
+});
+
+export const deleteProjectTaskSchema = z.object({
+  params: projectTaskIdParamSchema,
+});
+
+export const moveProjectTaskSchema = z.object({
+  params: projectTaskIdParamSchema,
+  body: moveTaskBodySchema,
 });
 
 // ============ TYPE EXPORTS ============

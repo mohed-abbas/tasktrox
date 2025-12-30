@@ -1,7 +1,11 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  // Monorepo support - tell Next.js where the root is for proper module resolution
+  outputFileTracingRoot: path.join(__dirname, '../'),
 
   // Image optimization
   images: {
@@ -28,6 +32,11 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '2mb',
     },
+  },
+
+  // Turbopack configuration for monorepo
+  turbopack: {
+    root: path.join(__dirname, '../'),
   },
 };
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -21,6 +22,7 @@ interface SortableColumnProps {
   onNameChange?: (newName: string) => void;
   onTaskClick?: (task: Task) => void;
   isEditable?: boolean;
+  isDraggingTask?: boolean;
   className?: string;
 }
 
@@ -35,6 +37,7 @@ export function SortableColumn({
   onNameChange,
   onTaskClick,
   isEditable = true,
+  isDraggingTask = false,
   className,
 }: SortableColumnProps) {
   // Sortable for column reordering
@@ -61,6 +64,27 @@ export function SortableColumn({
       columnId: id,
     },
   });
+
+  // Delayed expand state - only expand after hovering for 150ms
+  const [isExpandedDropZone, setIsExpandedDropZone] = useState(false);
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (isOver && isDraggingTask && tasks.length === 0) {
+      // Delay before expanding
+      timeoutId = setTimeout(() => {
+        setIsExpandedDropZone(true);
+      }, 150);
+    } else {
+      // Immediately collapse when not hovering
+      setIsExpandedDropZone(false);
+    }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isOver, isDraggingTask, tasks.length]);
 
   const count = taskCount ?? tasks.length;
   const taskIds = tasks.map((task) => task.id);
@@ -98,9 +122,12 @@ export function SortableColumn({
       <div
         ref={setDroppableRef}
         className={cn(
-          'flex flex-col gap-2.5 min-h-[100px] flex-1 overflow-y-auto scrollbar-hide p-1 -m-1',
-          'transition-colors duration-200',
-          isOver && 'bg-gray-100/50 rounded-xl'
+          'flex flex-col gap-2.5 flex-1 overflow-y-auto scrollbar-hide p-1 -m-1',
+          'transition-all duration-200 rounded-xl',
+          // Only expand THIS column when hovering over it with a task (after delay)
+          isExpandedDropZone ? 'min-h-[200px]' : 'min-h-[60px]',
+          // Immediate visual feedback when hovering
+          isOver && isDraggingTask && 'bg-blue-50 border-2 border-dashed border-blue-300'
         )}
       >
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
@@ -112,6 +139,13 @@ export function SortableColumn({
             />
           ))}
         </SortableContext>
+
+        {/* Visual feedback when dragging over empty column (after delay) */}
+        {isExpandedDropZone && (
+          <div className="flex-1 flex items-center justify-center text-blue-500 text-sm font-medium pointer-events-none">
+            Release to drop
+          </div>
+        )}
 
         {/* Add Task Form */}
         <AddTaskForm
