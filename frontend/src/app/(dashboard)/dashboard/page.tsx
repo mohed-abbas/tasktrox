@@ -1,16 +1,31 @@
 'use client';
 
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
+import { useAuth, useProjects } from '@/hooks';
+import { Card, CardContent } from '@/components/ui/card';
+import { ProjectCard } from '@/components/project/ProjectCard';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   CheckSquare,
   FolderKanban,
   Clock,
   TrendingUp,
+  ArrowRight,
+  Plus,
 } from 'lucide-react';
+
+const MAX_DASHBOARD_PROJECTS = 6;
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { projects, isLoading: isLoadingProjects } = useProjects();
+
+  // Sort by updatedAt desc and take only the first 6
+  const recentProjects = [...projects]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, MAX_DASHBOARD_PROJECTS);
+
+  const showViewAll = projects.length > MAX_DASHBOARD_PROJECTS;
 
   return (
     <div className="space-y-6">
@@ -75,7 +90,9 @@ export default function DashboardPage() {
                 <FolderKanban className="size-5 text-label-purple-text" />
               </div>
               <div>
-                <p className="text-2xl font-semibold text-gray-800">3</p>
+                <p className="text-2xl font-semibold text-gray-800">
+                  {projects.length}
+                </p>
                 <p className="text-xs text-gray-500">Active Projects</p>
               </div>
             </div>
@@ -83,44 +100,63 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* User Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Account Information</CardTitle>
-          <CardDescription>
-            Your authentication is working correctly.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="bg-success-light text-success-dark p-4 rounded-lg">
-              <p className="font-medium">Authentication successful!</p>
-              <p className="text-sm mt-1">
-                You are signed in as <strong>{user?.email}</strong>
-              </p>
-            </div>
+      {/* Your Projects Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-800">Your Projects</h2>
+          {showViewAll && (
+            <Link
+              href="/projects"
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              View All
+              <ArrowRight className="size-4" />
+            </Link>
+          )}
+        </div>
 
-            <div className="text-sm text-gray-600 space-y-2">
-              <p>
-                <span className="text-gray-500">User ID:</span>{' '}
-                <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
-                  {user?.id}
-                </span>
-              </p>
-              <p>
-                <span className="text-gray-500">Name:</span> {user?.name}
-              </p>
-              <p>
-                <span className="text-gray-500">Email:</span> {user?.email}
-              </p>
-              <p>
-                <span className="text-gray-500">Provider:</span>{' '}
-                <span className="capitalize">{user?.provider || 'local'}</span>
-              </p>
-            </div>
+        {isLoadingProjects ? (
+          // Loading state
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-[120px] rounded-lg" />
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        ) : recentProjects.length === 0 ? (
+          // Empty state
+          <Card className="p-8">
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="p-3 bg-gray-100 rounded-full mb-4">
+                <FolderKanban className="size-8 text-gray-400" />
+              </div>
+              <h3 className="text-base font-medium text-gray-800 mb-1">
+                No projects yet
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Create your first project to get started
+              </p>
+              <Link href="/projects" className="btn-primary flex items-center gap-1.5">
+                <Plus className="size-4" />
+                Create Project
+              </Link>
+            </div>
+          </Card>
+        ) : (
+          // Projects grid
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recentProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                id={project.id}
+                name={project.name}
+                description={project.description ?? undefined}
+                taskCount={0} // TODO: Add task count when available from API
+                memberCount={project._count?.members ?? project.members?.length ?? 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

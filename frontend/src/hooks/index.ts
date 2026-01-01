@@ -39,3 +39,6 @@ export { useSearch } from './useSearch';
 
 // Filter state management hook
 export { useFilters } from './useFilters';
+
+// Projects operations hook
+export { useProjects } from './useProjects';

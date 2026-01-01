@@ -20,7 +20,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo, LogoIcon } from '@/components/icons/Logo';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth, useProjects } from '@/hooks';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Navigation items for Dashboard section
 const dashboardNavItems = [
@@ -30,15 +31,6 @@ const dashboardNavItems = [
   { href: '/messages', label: 'Messages', icon: MessageSquare },
   { href: '/files', label: 'Files', icon: Folder },
   { href: '/profile', label: 'My Profile', icon: User },
-];
-
-// Mock projects data - will be replaced with API data
-const mockProjects = [
-  { id: '1', name: 'SmartBoard UI' },
-  { id: '2', name: 'QuickTask API' },
-  { id: '3', name: 'InsightPanel' },
-  { id: '4', name: 'FlowAuth' },
-  { id: '5', name: 'NotifCenter' },
 ];
 
 interface SidebarProps {
@@ -60,6 +52,7 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const { projects, isLoading: isLoadingProjects } = useProjects();
   const [projectsExpanded, setProjectsExpanded] = useState(true);
 
   const handleLogout = async () => {
@@ -159,23 +152,38 @@ export function Sidebar({
                 {/* Project List */}
                 {projectsExpanded && (
                   <div className="flex flex-col">
-                    {mockProjects.map((project) => {
-                      const isActive = pathname === `/projects/${project.id}`;
-                      return (
-                        <Link
-                          key={project.id}
-                          href={`/projects/${project.id}`}
-                          onClick={handleNavClick}
-                          className={cn(
-                            'sidebar-item',
-                            isActive && 'active'
-                          )}
-                        >
-                          <GripVertical className="size-[18px] shrink-0 text-gray-400" />
-                          <span>{project.name}</span>
-                        </Link>
-                      );
-                    })}
+                    {isLoadingProjects ? (
+                      // Loading skeletons
+                      <div className="space-y-1 px-4">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} className="h-9 w-full rounded-lg" />
+                        ))}
+                      </div>
+                    ) : projects.length === 0 ? (
+                      // Empty state
+                      <p className="px-4 py-2 text-sm text-gray-400">
+                        No projects yet
+                      </p>
+                    ) : (
+                      // Project list
+                      projects.map((project) => {
+                        const isActive = pathname === `/projects/${project.id}`;
+                        return (
+                          <Link
+                            key={project.id}
+                            href={`/projects/${project.id}`}
+                            onClick={handleNavClick}
+                            className={cn(
+                              'sidebar-item',
+                              isActive && 'active'
+                            )}
+                          >
+                            <GripVertical className="size-[18px] shrink-0 text-gray-400" />
+                            <span className="truncate">{project.name}</span>
+                          </Link>
+                        );
+                      })
+                    )}
                   </div>
                 )}
 
