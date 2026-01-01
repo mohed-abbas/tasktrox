@@ -111,37 +111,47 @@ export function Hero() {
         {/* DESKTOP: Hero Content Image Visualization   */}
         {/* ============================================ */}
         <div className="relative mt-16 lg:mt-20 h-[500px] hidden lg:block">
-          {/* SVG Curve Lines - Connecting Elements */}
+          {/* SVG Elbow Connector Lines - Right angle turns with rounded corners */}
           <svg
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            className="absolute inset-0 w-full h-full pointer-events-none z-0"
             viewBox="0 0 1240 500"
             fill="none"
             preserveAspectRatio="xMidYMid meet"
           >
-            {/* Line from center to right card */}
+            {/* Line from center to right/up (to task card) */}
+            {/* Path: start at center → horizontal right → rounded 90° corner (15px radius) → vertical up */}
             <path
-              d="M620 250 Q 750 250, 750 180 L 750 120"
-              stroke="#E5E7EB"
+              d="M620 250
+                 H 735
+                 Q 750 250, 750 235
+                 V 120"
+              stroke="#9CA3AF"
               strokeWidth="1.5"
               fill="none"
+              strokeLinecap="round"
             />
-            {/* Arrow at the end */}
-            <polygon
-              points="746,125 750,115 754,125"
-              fill="#E5E7EB"
+            {/* Diamond arrow at the end (pointing up) */}
+            <path
+              d="M750 115 L754.5 121 L750 127 L745.5 121 Z"
+              fill="#9CA3AF"
             />
 
-            {/* Line from center to left card */}
+            {/* Line from center to left/down (to Add Member button) */}
+            {/* Path: start at center → horizontal left → rounded 90° corner (15px radius) → vertical down */}
             <path
-              d="M620 250 Q 490 250, 490 320 L 490 380"
-              stroke="#E5E7EB"
+              d="M620 250
+                 H 505
+                 Q 490 250, 490 265
+                 V 375"
+              stroke="#9CA3AF"
               strokeWidth="1.5"
               fill="none"
+              strokeLinecap="round"
             />
-            {/* Arrow at the end */}
-            <polygon
-              points="486,375 490,385 494,375"
-              fill="#E5E7EB"
+            {/* Diamond arrow at the end (pointing down) */}
+            <path
+              d="M490 380 L494.5 374 L490 368 L485.5 374 Z"
+              fill="#9CA3AF"
             />
           </svg>
 
