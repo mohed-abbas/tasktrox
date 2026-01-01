@@ -194,12 +194,12 @@ function TaskCardPreview() {
 function InviteCardPreview() {
   const members = [
     {
-      name: 'Awais Raza',
+      name: 'Dimitri Ivanov',
       role: 'Designer',
       avatar: '/images/hero/avatar-robert.png',
     },
     {
-      name: 'Hamail Hassan',
+      name: 'Hamail Harrison',
       role: 'Senior Designer',
       avatar: '/images/hero/avatar-henry.png',
     },

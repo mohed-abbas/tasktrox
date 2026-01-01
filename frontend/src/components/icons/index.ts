@@ -9,6 +9,7 @@ export {
   TagLabelIcon,
   PlusTaskIcon,
 } from './ViewIcons';
+export { PricingCheckIcon } from './PricingCheckIcon';
 
 // Re-export commonly used Lucide icons for consistency
 // Map Figma icon names to Lucide equivalents

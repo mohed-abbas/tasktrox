@@ -1,71 +1,82 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Star } from 'lucide-react';
+import { TestimonialCard, VideoTestimonialCard } from './testimonials/index';
 
-const testimonials = [
-  {
+// Testimonial data from Figma design
+const testimonials = {
+  // Column 1
+  octavia: {
     quote:
-      "Tasktrox is a perfect fit for teams. From sprints to stand-ups, it keeps everyone on the same page without the usual chaos.",
-    author: 'Sarah Mitchell',
-    role: 'Product Manager at Zentora',
-    rating: 5,
-    avatar: 'SM',
+      '"Tasktrox has completely changed how we operate. I used to manage my team\'s tasks across multiple tools, but with Tasktrox, everything is centralized and effortless. From assigning tasks to tracking progress — it just works."',
+    author: {
+      name: 'Octavia Khan',
+      role: 'People Ops – Craftwise',
+      avatar: '/images/testimonials/avatar-octavia.png',
+    },
   },
-  {
+  ravi: {
     quote:
-      "The intuitive interface makes project management a breeze. Our team's productivity has increased by 40% since switching to Tasktrox.",
-    author: 'James Chen',
-    role: 'Engineering Lead at Pulseframe',
-    rating: 5,
-    avatar: 'JC',
+      '"We run a fast-paced dev team and needed something lightweight yet powerful. Tasktrox delivered. Tagging, priorities, due dates — it\'s all customizable and built for how real teams work."',
+    author: {
+      name: 'Ravi Malhotra',
+      role: 'Engineering Manager – Hexware',
+      avatar: '/images/testimonials/avatar-ravi.png',
+    },
   },
-  {
+
+  // Column 2
+  daniel: {
     quote:
-      "Finally, a tool that understands how modern teams work. The real-time collaboration features are game-changing for remote teams.",
-    author: 'Emily Rodriguez',
-    role: 'Design Director at Nexvio',
-    rating: 5,
-    avatar: 'ER',
+      '"The clarity Tasktrox provides is unmatched. I can glance at our dashboard and instantly understand what\'s in progress, what\'s stuck, and who needs help. We\'ve saved hours every week just by switching."',
+    author: {
+      name: 'Daniel H.',
+      role: 'Product Manager – NovaTech',
+      avatar: '/images/testimonials/avatar-daniel.png',
+    },
   },
-  {
+  zainab: {
+    author: {
+      name: 'Zainab Shaikh',
+      role: 'Head of Projects – Lumenly',
+    },
+    thumbnailSrc: '/images/testimonials/video-bg.png',
+    // videoSrc will be added when video is available
+  },
+
+  // Column 3
+  layla: {
     quote:
-      "We tried dozen task managers before landing on Tasktrox. The drag-and-drop Kanban board is smooth, and the analytics help us spot bottlenecks instantly.",
-    author: 'Michael Park',
-    role: 'CTO at Cloudova',
-    rating: 5,
-    avatar: 'MP',
+      '"We\'ve used other task platforms before, but none felt this clean and fast. The UI is intuitive, onboarding is painless, and the ability to toggle views (Kanban to list) has made managing projects far easier."',
+    author: {
+      name: 'Layla Mendez',
+      role: 'UX Lead – Loop Studio',
+      avatar: '/images/testimonials/avatar-layla.png',
+    },
   },
-  {
+  areeba: {
     quote:
-      "Onboarding new team members is now effortless. Tasktrox's clean design means less training time and more productive work.",
-    author: 'Lisa Thompson',
-    role: 'HR Manager at Quantura',
-    rating: 5,
-    avatar: 'LT',
+      '"Honestly, we didn\'t expect a task tool to impact our creative workflow this much. Tasktrox keeps everyone in sync — even across departments. The collaboration tools are smooth and effective."',
+    author: {
+      name: 'Areeba Qureshi',
+      role: 'Senior Designer – BrightGrid',
+      avatar: '/images/testimonials/avatar-areeba.png',
+    },
   },
-  {
-    quote:
-      "The integration with our existing tools was seamless. Tasktrox fits perfectly into our workflow without disrupting what already works.",
-    author: 'David Kim',
-    role: 'Operations Lead at Novascale',
-    rating: 5,
-    avatar: 'DK',
-  },
-];
+};
 
 export function Testimonials() {
   return (
-    <section className="py-20 lg:py-32 bg-white">
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-[100px]">
-        {/* Section Header */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-16">
+    <section className="bg-gray-50 py-16 lg:py-[120px] px-4 sm:px-6 lg:px-[100px]">
+      <div className="max-w-[1440px] mx-auto flex flex-col gap-12 lg:gap-[80px]">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-4xl lg:text-5xl font-bold text-gray-800 leading-tight max-w-[400px]"
+            className="text-3xl sm:text-4xl lg:text-[48px] font-medium text-black leading-[1.2] capitalize max-w-[458px]"
           >
             What Our Users Say About Tasktrox
           </motion.h2>
@@ -74,54 +85,140 @@ export function Testimonials() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-lg text-gray-500 max-w-[400px]"
+            className="text-lg lg:text-xl text-gray-500/70 leading-[1.5] max-w-[494px]"
           >
-            Teams around the world trust Tasktrox to keep their projects
-            organized and their teams productive.
+            Teams love how Tasktrox helps them stay organized, collaborate
+            seamlessly, and complete work faster — without the chaos.
           </motion.p>
         </div>
 
-        {/* Testimonial Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={testimonial.author}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-shadow duration-300"
-            >
-              {/* Rating */}
-              <div className="flex gap-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={16}
-                    className="fill-yellow-400 text-yellow-400"
-                  />
-                ))}
-              </div>
+        {/* Testimonials Grid */}
+        {/* Desktop: 3 asymmetric columns */}
+        <div className="hidden lg:flex gap-8 justify-center">
+          {/* Column 1 - Two equal height cards */}
+          <div className="flex flex-col gap-8 w-[392px] h-[878px]">
+            <TestimonialCard
+              quote={testimonials.octavia.quote}
+              author={testimonials.octavia.author}
+              className="flex-1 min-h-0"
+              index={0}
+            />
+            <TestimonialCard
+              quote={testimonials.ravi.quote}
+              author={testimonials.ravi.author}
+              className="flex-1 min-h-0"
+              index={1}
+            />
+          </div>
 
-              {/* Quote */}
-              <p className="text-gray-600 leading-relaxed mb-6">
-                &ldquo;{testimonial.quote}&rdquo;
-              </p>
+          {/* Column 2 - Short card + Video card */}
+          <div className="flex flex-col gap-8 w-[392px]">
+            <TestimonialCard
+              quote={testimonials.daniel.quote}
+              author={testimonials.daniel.author}
+              className="h-[325px]"
+              index={2}
+            />
+            <VideoTestimonialCard
+              author={testimonials.zainab.author}
+              thumbnailSrc={testimonials.zainab.thumbnailSrc}
+              className="h-[521px]"
+              index={3}
+            />
+          </div>
 
-              {/* Author */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-white text-sm font-medium">
-                  {testimonial.avatar}
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {testimonial.author}
-                  </p>
-                  <p className="text-gray-500 text-xs">{testimonial.role}</p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+          {/* Column 3 - Two equal height cards */}
+          <div className="flex flex-col gap-8 w-[392px] h-[878px]">
+            <TestimonialCard
+              quote={testimonials.layla.quote}
+              author={testimonials.layla.author}
+              className="flex-1 min-h-0"
+              index={4}
+            />
+            <TestimonialCard
+              quote={testimonials.areeba.quote}
+              author={testimonials.areeba.author}
+              className="flex-1 min-h-0"
+              index={5}
+            />
+          </div>
+        </div>
+
+        {/* Tablet: 2 columns */}
+        <div className="hidden md:flex lg:hidden gap-6 justify-center">
+          {/* Column 1 */}
+          <div className="flex flex-col gap-6 flex-1">
+            <TestimonialCard
+              quote={testimonials.octavia.quote}
+              author={testimonials.octavia.author}
+              index={0}
+            />
+            <TestimonialCard
+              quote={testimonials.daniel.quote}
+              author={testimonials.daniel.author}
+              index={1}
+            />
+            <TestimonialCard
+              quote={testimonials.layla.quote}
+              author={testimonials.layla.author}
+              index={2}
+            />
+          </div>
+
+          {/* Column 2 */}
+          <div className="flex flex-col gap-6 flex-1">
+            <TestimonialCard
+              quote={testimonials.ravi.quote}
+              author={testimonials.ravi.author}
+              index={3}
+            />
+            <VideoTestimonialCard
+              author={testimonials.zainab.author}
+              thumbnailSrc={testimonials.zainab.thumbnailSrc}
+              className="h-[400px]"
+              index={4}
+            />
+            <TestimonialCard
+              quote={testimonials.areeba.quote}
+              author={testimonials.areeba.author}
+              index={5}
+            />
+          </div>
+        </div>
+
+        {/* Mobile: Single column, stacked */}
+        <div className="flex md:hidden flex-col gap-6">
+          <TestimonialCard
+            quote={testimonials.octavia.quote}
+            author={testimonials.octavia.author}
+            index={0}
+          />
+          <TestimonialCard
+            quote={testimonials.ravi.quote}
+            author={testimonials.ravi.author}
+            index={1}
+          />
+          <TestimonialCard
+            quote={testimonials.daniel.quote}
+            author={testimonials.daniel.author}
+            index={2}
+          />
+          <VideoTestimonialCard
+            author={testimonials.zainab.author}
+            thumbnailSrc={testimonials.zainab.thumbnailSrc}
+            className="h-[350px] sm:h-[400px]"
+            index={3}
+          />
+          <TestimonialCard
+            quote={testimonials.layla.quote}
+            author={testimonials.layla.author}
+            index={4}
+          />
+          <TestimonialCard
+            quote={testimonials.areeba.quote}
+            author={testimonials.areeba.author}
+            index={5}
+          />
         </div>
       </div>
     </section>

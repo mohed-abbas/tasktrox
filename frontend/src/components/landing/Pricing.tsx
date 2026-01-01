@@ -1,183 +1,200 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
 import Link from 'next/link';
+import { PricingCheckIcon } from '@/components/icons';
 
-const plans = [
+interface PlanFeature {
+  text: string;
+}
+
+interface Plan {
+  name: string;
+  description: string;
+  price: string;
+  period: string;
+  features: PlanFeature[];
+  cta: string;
+  highlighted: boolean;
+}
+
+const plans: Plan[] = [
   {
     name: 'Starter',
-    description: 'Perfect for individuals and small teams getting started.',
-    price: 9,
-    period: 'month',
+    description: 'Kickstart your productivity journey',
+    price: '$9',
+    period: 'Per Month',
     features: [
-      'Up to 5 team members',
-      'Unlimited projects',
-      'Basic integrations',
-      '5GB storage',
-      'Email support',
+      { text: 'Up to 5 team members' },
+      { text: 'Access to all core features' },
+      { text: 'Kanban, List & Grid views' },
+      { text: 'Task labels, due dates, and priorities' },
+      { text: 'Email support' },
     ],
-    cta: 'Get Started',
+    cta: 'Choose Plan',
     highlighted: false,
   },
   {
     name: 'Pro',
-    description: 'Best for growing teams that need more power and flexibility.',
-    price: 19,
-    period: 'month',
+    description: 'Built for fast-growing teams',
+    price: '$19',
+    period: 'Per Month',
     features: [
-      'Up to 25 team members',
-      'Unlimited projects',
-      'Advanced integrations',
-      '50GB storage',
-      'Priority support',
-      'Custom workflows',
-      'Advanced analytics',
-      'API access',
+      { text: 'Up to 25 team members' },
+      { text: 'Recurring tasks & reminders' },
+      { text: 'Shared team boards' },
+      { text: 'Commenting & file attachments' },
+      { text: 'Priority support' },
     ],
-    cta: 'Start Free Trial',
+    cta: 'Choose Plan',
     highlighted: true,
   },
   {
     name: 'Enterprise',
-    description: 'For large organizations with advanced security needs.',
-    price: 999,
-    period: 'month',
+    description: 'Customized for large teams & organizations',
+    price: '$999',
+    period: 'Per Month',
     features: [
-      'Unlimited team members',
-      'Unlimited projects',
-      'Enterprise integrations',
-      'Unlimited storage',
-      '24/7 dedicated support',
-      'Custom workflows',
-      'Advanced analytics',
-      'API access',
-      'SSO & SAML',
-      'Audit logs',
-      'Custom contracts',
+      { text: 'Unlimited members & projects' },
+      { text: 'Advanced admin controls & roles' },
+      { text: 'Dedicated account manager' },
+      { text: 'Custom integrations' },
+      { text: 'SAML/SSO and team analytics' },
     ],
-    cta: 'Contact Sales',
+    cta: 'Choose Plan',
     highlighted: false,
   },
 ];
 
+function PricingCard({ plan, index }: { plan: Plan; index: number }) {
+  const isHighlighted = plan.highlighted;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.15 }}
+      className={`relative flex flex-col gap-6 bg-white rounded-2xl p-6 ${
+        isHighlighted
+          ? 'border-[1.5px] border-[#0048ad] shadow-pricing-pro'
+          : 'border border-gray-200'
+      }`}
+    >
+      {/* Recommended Badge - only for Pro */}
+      {isHighlighted && (
+        <div className="absolute top-[18px] right-6 bg-gray-900 text-gray-50 text-xs font-medium px-2.5 py-1.5 rounded-[10px]">
+          Recommended
+        </div>
+      )}
+
+      {/* Card Header Section */}
+      <div className="flex flex-col gap-4">
+        {/* Plan Name & Description */}
+        <div className="flex flex-col">
+          <h3 className="text-[32px] font-semibold text-gray-800 leading-[1.5]">
+            {plan.name}
+          </h3>
+          <p className="text-base text-black/70 leading-[1.5]">
+            {plan.description}
+          </p>
+        </div>
+
+        {/* Price */}
+        <div className="flex flex-col">
+          <span className="text-[40px] font-semibold text-gray-800 leading-[1.5]">
+            {plan.price}
+          </span>
+          <span className="text-base text-black/70 leading-[1.5]">
+            {plan.period}
+          </span>
+        </div>
+
+        {/* CTA Button */}
+        {isHighlighted ? (
+          <Link
+            href="/login"
+            className="relative w-full text-center py-2.5 px-6 rounded-[7px] text-sm text-white capitalize overflow-hidden"
+            style={{
+              background: 'linear-gradient(180deg, #262730 80.186%, rgba(56, 57, 66, 0.7) 100%)',
+              border: '1px solid white',
+            }}
+          >
+            <span className="relative z-10">{plan.cta}</span>
+            {/* Inner shadow highlight */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                boxShadow: 'inset 0px 3px 0px 0px rgba(255, 255, 255, 0.2)',
+              }}
+            />
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className="w-full text-center py-2.5 px-6 rounded-[7px] text-sm text-gray-800 capitalize bg-white border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            {plan.cta}
+          </Link>
+        )}
+      </div>
+
+      {/* Separator Line */}
+      <div className="w-full h-px border-t border-dashed border-gray-300" />
+
+      {/* Features Section */}
+      <div className="flex flex-col gap-5">
+        <p className="text-base font-medium text-gray-900 leading-[1.5]">
+          Includes everything, plus
+        </p>
+
+        <div className="flex flex-col gap-[13px]">
+          {plan.features.map((feature, featureIndex) => (
+            <div key={featureIndex} className="flex items-center gap-3">
+              <PricingCheckIcon size={20} className="shrink-0 text-black" />
+              <span className="text-base text-black/70 leading-[1.5]">
+                {feature.text}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export function Pricing() {
   return (
-    <section id="pricing" className="py-20 lg:py-32 bg-gray-50">
+    <section id="pricing" className="py-20 lg:py-[120px] bg-white">
       <div className="max-w-[1440px] mx-auto px-6 lg:px-[100px]">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <div className="flex flex-col items-center gap-6 text-center mb-[67px]">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-4xl lg:text-5xl font-bold text-gray-800 leading-tight mb-4"
+            className="text-4xl lg:text-[48px] font-medium text-black leading-[1.2] capitalize max-w-[458px]"
           >
-            Find The Right Plan
-            <br />
-            For Your Team
+            Find the Right Plan for Your Team
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-lg text-gray-500 max-w-[600px] mx-auto"
+            className="text-lg lg:text-xl text-black/70 leading-[1.5] max-w-[560px]"
           >
-            Choose the plan that works best for your team size and requirements.
-            All plans include a 14-day free trial.
+            Choose from flexible plans designed to help teams of all sizes plan, collaborate, and complete work efficiently.
           </motion.p>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[31px]">
           {plans.map((plan, index) => (
-            <motion.div
-              key={plan.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.15 }}
-              className={`relative bg-white rounded-2xl p-6 lg:p-8 ${
-                plan.highlighted
-                  ? 'ring-2 ring-gray-800 shadow-xl scale-105'
-                  : 'border border-gray-200 shadow-sm'
-              }`}
-            >
-              {/* Popular Badge */}
-              {plan.highlighted && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-gray-800 text-white text-xs font-medium px-3 py-1 rounded-full">
-                    Most Popular
-                  </span>
-                </div>
-              )}
-
-              {/* Plan Header */}
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  {plan.name}
-                </h3>
-                <p className="text-sm text-gray-500">{plan.description}</p>
-              </div>
-
-              {/* Price */}
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl lg:text-5xl font-bold text-gray-800">
-                    ${plan.price}
-                  </span>
-                  <span className="text-gray-500">/{plan.period}</span>
-                </div>
-              </div>
-
-              {/* CTA Button */}
-              <Link
-                href="/login"
-                className={`block w-full text-center py-3 rounded-lg font-medium transition-colors mb-6 ${
-                  plan.highlighted
-                    ? 'bg-gray-800 text-white hover:bg-gray-700'
-                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                }`}
-              >
-                {plan.cta}
-              </Link>
-
-              {/* Features */}
-              <div className="space-y-3">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                  What&apos;s included
-                </p>
-                {plan.features.map((feature) => (
-                  <div key={feature} className="flex items-start gap-3">
-                    <Check
-                      size={18}
-                      className={`flex-shrink-0 mt-0.5 ${
-                        plan.highlighted ? 'text-gray-800' : 'text-gray-400'
-                      }`}
-                    />
-                    <span className="text-sm text-gray-600">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            <PricingCard key={plan.name} plan={plan} index={index} />
           ))}
         </div>
-
-        {/* Additional Info */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-center text-sm text-gray-500 mt-12"
-        >
-          All prices in USD. Taxes may apply based on your location.{' '}
-          <Link href="#" className="text-gray-800 underline hover:no-underline">
-            View full pricing details
-          </Link>
-        </motion.p>
       </div>
     </section>
   );
