@@ -3,10 +3,12 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { Strategy as GoogleStrategy, Profile as GoogleProfile } from 'passport-google-oauth20';
 import { prisma } from './database.js';
+import { env } from './env.js';
 import { AuthService } from '../services/auth.service.js';
 import type { User } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// Use validated environment variable - no fallback (fail-fast on startup)
+const JWT_SECRET = env.JWT_SECRET;
 
 // Serialize user ID to session
 passport.serializeUser((user: Express.User, done) => {
@@ -77,14 +79,14 @@ passport.use(
   )
 );
 
-// Google OAuth Strategy
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+// Google OAuth Strategy (only enabled if credentials are configured)
+if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
   passport.use(
     new GoogleStrategy(
       {
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/v1/auth/google/callback',
+        clientID: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+        callbackURL: env.GOOGLE_CALLBACK_URL,
       },
       async (_accessToken, _refreshToken, profile: GoogleProfile, done) => {
         try {

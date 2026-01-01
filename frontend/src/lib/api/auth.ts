@@ -49,6 +49,12 @@ export async function resetPassword(data: ResetPasswordInput): Promise<void> {
   await axios.post('/auth/reset-password', data);
 }
 
+// Exchange OAuth authorization code for tokens
+export async function exchangeOAuthCode(code: string): Promise<AuthResponse> {
+  const response = await axios.post<ApiResponse<AuthResponse>>('/auth/oauth/exchange', { code });
+  return response.data.data!;
+}
+
 // OAuth URLs
 export const getGoogleAuthUrl = () => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';

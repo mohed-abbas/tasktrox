@@ -3,10 +3,12 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '../config/database.js';
 import { redis } from '../config/redis.js';
+import { env } from '../config/env.js';
 import type { User } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN || '15m';
+// Use validated environment variables - no fallbacks (fail-fast on startup)
+const JWT_SECRET = env.JWT_SECRET;
+const JWT_ACCESS_EXPIRES_IN = env.JWT_ACCESS_EXPIRES_IN;
 const REFRESH_TOKEN_TTL_DAYS = 7;
 
 interface TokenPayload {

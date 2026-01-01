@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import * as searchService from '../services/search.service.js';
 import type { SearchQueryInput } from '../validators/search.validator.js';
+import { searchLogger } from '../config/logger.js';
 
 /**
  * Search tasks and projects.
@@ -18,7 +19,7 @@ export async function search(req: Request, res: Response): Promise<void> {
       data: results,
     });
   } catch (error) {
-    console.error('Search error:', error);
+    searchLogger.error({ err: error }, 'Search error');
     res.status(500).json({
       success: false,
       error: {

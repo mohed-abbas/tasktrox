@@ -1,13 +1,16 @@
-import express, { type Application, type Request, type Response } from 'express';
+import express, { type Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-// import rateLimit from 'express-rate-limit'; // TODO: Enable rate limiting in production
+import { env } from './config/env.js';
+import { globalLimiter } from './middleware/rate-limiter.middleware.js';
 import { initializePassport } from './config/passport.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFoundHandler } from './middleware/not-found.js';
+import { setCsrfCookie } from './middleware/csrf.middleware.js';
 import routes from './routes/index.js';
+import healthRoutes from './routes/health.routes.js';
 
 const app: Application = express();
 
@@ -15,18 +18,13 @@ const app: Application = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: env.CORS_ORIGIN,
     credentials: true,
   })
 );
 
-// Rate limiting
-// const limiter = rateLimit({
-//   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-//   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
-//   message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
-// });
-// app.use('/api', limiter);
+// Global rate limiting
+app.use('/api', globalLimiter);
 
 // Initialize Passport
 app.use(initializePassport());
@@ -36,15 +34,16 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// CSRF protection - set token cookie on all responses
+app.use(setCsrfCookie);
+
 // Logging
-if (process.env.NODE_ENV !== 'test') {
+if (env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// Health check
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+// Health check routes
+app.use('/health', healthRoutes);
 
 // API routes
 app.use('/api/v1', routes);

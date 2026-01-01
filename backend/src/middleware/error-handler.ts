@@ -1,5 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
+import { logger } from '../config/logger.js';
+import { env } from '../config/env.js';
 
 interface AppError extends Error {
   statusCode?: number;
@@ -13,7 +15,7 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  console.error('Error:', err);
+  logger.error({ err }, 'Request error');
 
   // Zod validation errors
   if (err instanceof ZodError) {
@@ -41,7 +43,7 @@ export function errorHandler(
     error: {
       code,
       message,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+      ...(env.NODE_ENV === 'development' && { stack: err.stack }),
     },
   });
 }

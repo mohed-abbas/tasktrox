@@ -3,8 +3,10 @@ import app from './app.js';
 import { initializeSocket } from './sockets/index.js';
 import { prisma } from './config/database.js';
 import { redis } from './config/redis.js';
+import { env } from './config/env.js';
+import { logger, dbLogger, redisLogger } from './config/logger.js';
 
-const PORT = parseInt(process.env.PORT || '4000', 10);
+const PORT = env.PORT;
 
 const server = createServer(app);
 
@@ -15,30 +17,30 @@ async function start() {
   try {
     // Test database connection
     await prisma.$connect();
-    console.log('✅ Database connected');
+    dbLogger.info('Database connected successfully');
 
     // Test Redis connection
     await redis.ping();
-    console.log('✅ Redis connected');
+    redisLogger.info('Redis connected successfully');
 
     server.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-      console.log(`📚 API available at http://localhost:${PORT}/api/v1`);
-      console.log(`❤️ Health check at http://localhost:${PORT}/health`);
+      logger.info({ port: PORT }, 'Server started');
+      logger.info({ url: `http://localhost:${PORT}/api/v1` }, 'API available');
+      logger.info({ url: `http://localhost:${PORT}/health` }, 'Health check available');
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    logger.fatal({ err: error }, 'Failed to start server');
     process.exit(1);
   }
 }
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
+  logger.info('SIGTERM received. Shutting down gracefully...');
   await prisma.$disconnect();
   await redis.quit();
   server.close(() => {
-    console.log('Server closed');
+    logger.info('Server closed');
     process.exit(0);
   });
 });

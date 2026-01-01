@@ -12,15 +12,42 @@ export const api: AxiosInstance = axios.create({
 });
 
 const TOKEN_KEY = 'tasktrox_access_token';
+const CSRF_COOKIE_NAME = 'XSRF-TOKEN';
+
+/**
+ * Get CSRF token from cookie
+ */
+function getCsrfToken(): string | null {
+  if (typeof document === 'undefined') return null;
+
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === CSRF_COOKIE_NAME) {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+}
 
 // Request interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get token from localStorage if available
     if (typeof window !== 'undefined') {
+      // Add Bearer token if available
       const token = localStorage.getItem(TOKEN_KEY);
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      // Add CSRF token for state-changing requests without Bearer token
+      // (Bearer token requests are already CSRF-safe)
+      const stateMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+      if (stateMethods.includes(config.method?.toUpperCase() || '') && !token) {
+        const csrfToken = getCsrfToken();
+        if (csrfToken && config.headers) {
+          config.headers['X-CSRF-Token'] = csrfToken;
+        }
       }
     }
     return config;

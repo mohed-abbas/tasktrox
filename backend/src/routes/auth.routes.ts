@@ -37,6 +37,9 @@ router.post('/logout', AuthController.logout);
 // POST /auth/refresh - Refresh access token
 router.post('/refresh', AuthController.refresh);
 
+// POST /auth/oauth/exchange - Exchange OAuth authorization code for tokens
+router.post('/oauth/exchange', AuthController.exchangeOAuthCode);
+
 // POST /auth/forgot-password - Request password reset
 router.post(
   '/forgot-password',

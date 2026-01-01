@@ -1,5 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { AuthService } from '../services/auth.service.js';
+import { redis } from '../config/redis.js';
+import { env } from '../config/env.js';
 import type {
   RegisterInput,
   LoginInput,
@@ -7,10 +10,13 @@ import type {
   ResetPasswordInput,
 } from '../validators/auth.validator.js';
 
+// OAuth authorization code TTL in seconds (60 seconds = 1 minute)
+const OAUTH_CODE_TTL = 60;
+
 // Cookie options
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: env.NODE_ENV === 'production',
   sameSite: 'lax' as const,
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   path: '/',
@@ -99,7 +105,7 @@ export class AuthController {
       // Clear the cookie
       res.clearCookie('refreshToken', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
       });
@@ -136,7 +142,7 @@ export class AuthController {
         // Clear invalid cookie
         res.clearCookie('refreshToken', {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
+          secure: env.NODE_ENV === 'production',
           sameSite: 'lax',
           path: '/',
         });
@@ -184,10 +190,13 @@ export class AuthController {
 
       // Always return success to prevent email enumeration
       // In production, you would send an email here
-      if (token) {
-        // TODO: Send email with reset link
-        // await sendPasswordResetEmail(email, token);
-        console.log(`Password reset token for ${email}: ${token}`);
+      if (token && env.NODE_ENV === 'development') {
+        // In development only, log a masked preview for debugging
+        // Never log the full token as it could be captured in logs
+        const maskedToken = token.slice(0, 8) + '...' + token.slice(-4);
+        // TODO: Replace with structured logger when implementing Phase 2.1
+        console.debug(`[DEV] Password reset requested for ${email}. Token preview: ${maskedToken}`);
+        // TODO: Implement email service to send actual reset link
       }
 
       res.json({
@@ -231,29 +240,95 @@ export class AuthController {
   }
 
   // OAuth callback handler (for Google/Apple)
+  // Security: Uses authorization code pattern instead of passing tokens in URL
   static oauthCallback(req: Request, res: Response, next: NextFunction) {
     return async () => {
       try {
         if (!req.user) {
-          return res.redirect(
-            `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/error?message=Authentication failed`
-          );
+          return res.redirect(`${env.FRONTEND_URL}/auth/error?message=Authentication failed`);
         }
 
         const user = req.user as { id: string; email: string };
-        const tokens = await AuthService.generateTokens(user as Parameters<typeof AuthService.generateTokens>[0]);
 
-        // Set refresh token cookie
-        res.cookie('refreshToken', tokens.refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+        // Generate a single-use authorization code (not the actual token)
+        const authCode = crypto.randomBytes(32).toString('hex');
 
-        // Redirect to frontend with access token
-        res.redirect(
-          `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${tokens.accessToken}`
-        );
+        // Store user ID with the code in Redis (60 second TTL)
+        await redis.setex(`oauth_code:${authCode}`, OAUTH_CODE_TTL, user.id);
+
+        // Redirect to frontend with authorization code (not the token)
+        res.redirect(`${env.FRONTEND_URL}/auth/callback?code=${authCode}`);
       } catch (error) {
         next(error);
       }
     };
+  }
+
+  // POST /auth/oauth/exchange - Exchange authorization code for tokens
+  // Security: Code can only be used once and expires after 60 seconds
+  static async exchangeOAuthCode(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const { code } = req.body;
+
+      if (!code || typeof code !== 'string') {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_CODE',
+            message: 'Authorization code is required',
+          },
+        });
+        return;
+      }
+
+      // Get and immediately delete the code from Redis (single-use)
+      const userId = await redis.get(`oauth_code:${code}`);
+      await redis.del(`oauth_code:${code}`);
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'INVALID_OR_EXPIRED_CODE',
+            message: 'Authorization code is invalid or has expired',
+          },
+        });
+        return;
+      }
+
+      // Get user and generate tokens
+      const user = await AuthService.getUserById(userId);
+
+      if (!user) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: 'User not found',
+          },
+        });
+        return;
+      }
+
+      const tokens = await AuthService.generateTokens(user);
+
+      // Set refresh token cookie
+      res.cookie('refreshToken', tokens.refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+
+      res.json({
+        success: true,
+        data: {
+          user: sanitizeUser(user),
+          accessToken: tokens.accessToken,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 }
 

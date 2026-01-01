@@ -1,29 +1,31 @@
 import type { Server as HttpServer } from 'http';
 import { Server } from 'socket.io';
+import { env } from '../config/env.js';
+import { socketLogger } from '../config/logger.js';
 
 let io: Server;
 
 export function initializeSocket(server: HttpServer): Server {
   io = new Server(server, {
     cors: {
-      origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+      origin: env.CORS_ORIGIN,
       credentials: true,
     },
   });
 
   io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+    socketLogger.debug({ socketId: socket.id }, 'Client connected');
 
     // Join project room
     socket.on('project:join', (projectId: string) => {
       socket.join(`project:${projectId}`);
-      console.log(`Socket ${socket.id} joined project:${projectId}`);
+      socketLogger.debug({ socketId: socket.id, projectId }, 'Socket joined project room');
     });
 
     // Leave project room
     socket.on('project:leave', (projectId: string) => {
       socket.leave(`project:${projectId}`);
-      console.log(`Socket ${socket.id} left project:${projectId}`);
+      socketLogger.debug({ socketId: socket.id, projectId }, 'Socket left project room');
     });
 
     // Handle editing events
@@ -42,7 +44,7 @@ export function initializeSocket(server: HttpServer): Server {
     });
 
     socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
+      socketLogger.debug({ socketId: socket.id }, 'Client disconnected');
     });
   });
 
