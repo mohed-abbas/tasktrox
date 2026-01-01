@@ -161,7 +161,7 @@ export function Hero() {
             initial="initial"
             animate="animate"
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+            className="absolute left-1/2 top-[45%] -translate-x-1/2 -translate-y-1/2 z-10"
           >
             <div className="w-[58px] h-[58px] bg-gray-800 rounded-full flex items-center justify-center shadow-lg">
               <Image
