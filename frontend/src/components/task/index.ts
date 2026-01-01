@@ -7,3 +7,10 @@ export {
   type PrioritySelectorProps,
   type Priority,
 } from './PrioritySelector';
+export {
+  AssigneeSelector,
+  AssigneeAvatarStack,
+  type AssigneeSelectorProps,
+  type AssigneeAvatarStackProps,
+  type DisplayAssignee,
+} from './AssigneeSelector';

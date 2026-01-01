@@ -198,42 +198,40 @@ export function ColumnHeader({
         </div>
       </div>
 
-      {/* More Options Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            className={cn(
-              'p-1 rounded-md transition-colors hover:bg-black/5 flex-shrink-0',
-              config.headerText
-            )}
-            aria-label={`More options for ${name} column`}
-          >
-            <MoreHorizontal className="size-5" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem
-            onClick={() => {
-              if (isEditable) {
+      {/* More Options Dropdown - only show when editable */}
+      {isEditable && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                'p-1 rounded-md transition-colors hover:bg-black/5 flex-shrink-0',
+                config.headerText
+              )}
+              aria-label={`More options for ${name} column`}
+            >
+              <MoreHorizontal className="size-5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem
+              onClick={() => {
                 handleStartEdit();
-              } else {
-                onEdit?.();
-              }
-            }}
-          >
-            <Pencil className="size-4 mr-2" />
-            Rename
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={onDelete}
-            className="text-red-600 focus:text-red-600 focus:bg-red-50"
-          >
-            <Trash2 className="size-4 mr-2" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              }}
+            >
+              <Pencil className="size-4 mr-2" />
+              Rename
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={onDelete}
+              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+            >
+              <Trash2 className="size-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }

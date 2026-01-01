@@ -147,11 +147,13 @@ export function SortableColumn({
           </div>
         )}
 
-        {/* Add Task Form */}
-        <AddTaskForm
-          onSubmit={(title) => onAddTask?.(title)}
-          placeholder={`Add task to ${name}...`}
-        />
+        {/* Add Task Form - only show when editable */}
+        {isEditable && onAddTask && (
+          <AddTaskForm
+            onSubmit={(title) => onAddTask(title)}
+            placeholder={`Add task to ${name}...`}
+          />
+        )}
       </div>
     </div>
   );

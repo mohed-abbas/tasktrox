@@ -121,10 +121,10 @@ export async function deleteProject(projectId: string): Promise<void> {
  * Get project members
  */
 export async function getProjectMembers(projectId: string): Promise<ProjectMember[]> {
-  const response = await api.get<ApiResponse<ProjectMember[]>>(
+  const response = await api.get<ApiResponse<{ members: ProjectMember[] }>>(
     `/projects/${projectId}/members`
   );
-  return response.data.data;
+  return response.data.data.members;
 }
 
 /**
@@ -135,11 +135,11 @@ export async function addProjectMember(
   email: string,
   role: 'ADMIN' | 'MEMBER' | 'VIEWER' = 'MEMBER'
 ): Promise<ProjectMember> {
-  const response = await api.post<ApiResponse<ProjectMember>>(
+  const response = await api.post<ApiResponse<{ member: ProjectMember }>>(
     `/projects/${projectId}/members`,
     { email, role }
   );
-  return response.data.data;
+  return response.data.data.member;
 }
 
 /**
@@ -150,11 +150,11 @@ export async function updateMemberRole(
   userId: string,
   role: 'ADMIN' | 'MEMBER' | 'VIEWER'
 ): Promise<ProjectMember> {
-  const response = await api.patch<ApiResponse<ProjectMember>>(
+  const response = await api.patch<ApiResponse<{ member: ProjectMember }>>(
     `/projects/${projectId}/members/${userId}`,
     { role }
   );
-  return response.data.data;
+  return response.data.data.member;
 }
 
 /**

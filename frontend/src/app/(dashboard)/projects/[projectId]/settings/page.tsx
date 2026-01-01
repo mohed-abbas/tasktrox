@@ -4,10 +4,11 @@ import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Trash2, Loader2, AlertCircle, Tag } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, AlertCircle, Tag, Users, UserPlus } from 'lucide-react';
 import { getProject, updateProject, deleteProject, type Project } from '@/lib/api/projects';
-import { useLabels } from '@/hooks';
+import { useLabels, useProjectMembers, useAuth } from '@/hooks';
 import { ManageLabels } from '@/components/labels';
+import { AddMemberDialog, MembersList } from '@/components/project';
 
 interface ProjectSettingsPageProps {
   params: Promise<{ projectId: string }>;
@@ -21,6 +22,10 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [labelsDialogOpen, setLabelsDialogOpen] = useState(false);
+  const [membersDialogOpen, setMembersDialogOpen] = useState(false);
+
+  // Get current user
+  const { user } = useAuth();
 
   // Labels hook for project label management
   const {
@@ -30,6 +35,23 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
     updateLabel,
     deleteLabel,
   } = useLabels({ projectId });
+
+  // Project members hook
+  const {
+    members,
+    isLoading: membersLoading,
+    isViewer,
+    canManageMembers,
+    canChangeRoles,
+    canEditProject,
+    canDeleteProject,
+    addMember,
+    updateRole,
+    removeMember,
+    isAdding,
+    isUpdating,
+    isRemoving,
+  } = useProjectMembers({ projectId });
 
   // Fetch project data
   const {
@@ -81,8 +103,24 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
     await deleteMutation.mutateAsync();
   };
 
+  // Redirect viewers to project page (they shouldn't access settings)
+  useEffect(() => {
+    if (!membersLoading && isViewer) {
+      router.push(`/projects/${projectId}`);
+    }
+  }, [membersLoading, isViewer, projectId, router]);
+
   // Loading state
-  if (isLoading) {
+  if (isLoading || membersLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="size-8 text-gray-400 animate-spin" />
+      </div>
+    );
+  }
+
+  // If viewer, show loading while redirecting
+  if (isViewer) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="size-8 text-gray-400 animate-spin" />
@@ -141,8 +179,9 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="input-base"
+                className="input-base disabled:bg-gray-50 disabled:cursor-not-allowed"
                 required
+                disabled={!canEditProject}
               />
             </div>
 
@@ -155,21 +194,30 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="input-base resize-none"
+                className="input-base resize-none disabled:bg-gray-50 disabled:cursor-not-allowed"
+                disabled={!canEditProject}
               />
             </div>
+
+            {!canEditProject && (
+              <p className="text-xs text-gray-500 italic">
+                Only project admins and owners can edit these settings.
+              </p>
+            )}
           </div>
 
-          <div className="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-card">
-            <button
-              type="submit"
-              className="btn-primary flex items-center gap-2"
-              disabled={updateMutation.isPending}
-            >
-              {updateMutation.isPending && <Loader2 className="size-4 animate-spin" />}
-              Save Changes
-            </button>
-          </div>
+          {canEditProject && (
+            <div className="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-card">
+              <button
+                type="submit"
+                className="btn-primary flex items-center gap-2"
+                disabled={updateMutation.isPending}
+              >
+                {updateMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                Save Changes
+              </button>
+            </div>
+          )}
         </form>
       </div>
 
@@ -214,30 +262,90 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
         isLoading={labelsLoading}
       />
 
-      {/* Danger Zone */}
-      <div className="bg-white rounded-card border border-red-200 shadow-card">
+      {/* Team Members */}
+      <div className="bg-white rounded-card border border-gray-200 shadow-card">
         <div className="p-6">
-          <h2 className="text-base font-semibold text-gray-800 mb-1">
-            Danger Zone
-          </h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Permanently delete this project and all of its data.
-          </p>
-          <button
-            type="button"
-            onClick={handleDelete}
-            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-button text-sm font-medium transition-colors"
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Trash2 className="size-4" />
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                <Users className="size-4" />
+                Team Members
+              </h2>
+              <p className="text-sm text-gray-500">
+                Manage who has access to this project.
+                {members.length > 0 && (
+                  <span className="ml-1 text-gray-400">
+                    ({members.length} member{members.length !== 1 ? 's' : ''})
+                  </span>
+                )}
+              </p>
+            </div>
+            {canManageMembers && (
+              <button
+                type="button"
+                onClick={() => setMembersDialogOpen(true)}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <UserPlus className="size-4" />
+                Invite Member
+              </button>
             )}
-            Delete Project
-          </button>
+          </div>
+
+          {/* Members list */}
+          {membersLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="size-6 text-gray-400 animate-spin" />
+            </div>
+          ) : (
+            <MembersList
+              members={members}
+              currentUserId={user?.id}
+              canManageMembers={canManageMembers}
+              canChangeRoles={canChangeRoles}
+              onUpdateRole={updateRole}
+              onRemoveMember={removeMember}
+              isUpdating={isUpdating}
+              isRemoving={isRemoving}
+            />
+          )}
         </div>
       </div>
+
+      {/* AddMember Dialog */}
+      <AddMemberDialog
+        open={membersDialogOpen}
+        onOpenChange={setMembersDialogOpen}
+        onAddMember={addMember}
+        isLoading={isAdding}
+      />
+
+      {/* Danger Zone - Only show for project owner */}
+      {canDeleteProject && (
+        <div className="bg-white rounded-card border border-red-200 shadow-card">
+          <div className="p-6">
+            <h2 className="text-base font-semibold text-gray-800 mb-1">
+              Danger Zone
+            </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Permanently delete this project and all of its data.
+            </p>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-button text-sm font-medium transition-colors"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              Delete Project
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

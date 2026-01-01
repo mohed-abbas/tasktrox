@@ -24,3 +24,18 @@ export { useTask } from './useTask';
 
 // Label operations hook
 export { useLabels } from './useLabels';
+
+// Assignee operations hook
+export { useAssignees } from './useAssignees';
+
+// Project members hook
+export { useProjectMembers, type MemberRole } from './useProjectMembers';
+
+// View preference hook (per-project localStorage persistence)
+export { useViewPreference, type ViewMode } from './useViewPreference';
+
+// Search hook with debouncing
+export { useSearch } from './useSearch';
+
+// Filter state management hook
+export { useFilters } from './useFilters';

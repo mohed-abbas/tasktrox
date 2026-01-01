@@ -4,6 +4,8 @@ import projectRoutes from './project.routes.js';
 import columnRoutes from './column.routes.js';
 import taskRoutes from './task.routes.js';
 import labelRoutes from './label.routes.js';
+import assigneeRoutes from './assignee.routes.js';
+import searchRoutes from './search.routes.js';
 
 const router = Router();
 
@@ -25,6 +27,8 @@ router.use('/projects', projectRoutes);
 router.use('/', columnRoutes); // Column routes handle /projects/:projectId/columns and /columns/:columnId
 router.use('/', taskRoutes); // Task routes handle /columns/:columnId/tasks and /tasks/:taskId
 router.use('/', labelRoutes); // Label routes handle /projects/:projectId/labels and task labels
+router.use('/', assigneeRoutes); // Assignee routes handle /projects/:projectId/tasks/:taskId/assignees
+router.use('/search', searchRoutes); // Search routes handle /search?q=query
 // router.use('/users', userRoutes);
 
 export default router;

@@ -230,24 +230,37 @@ export function PrioritySelector({
 export function PriorityBadge({
   priority,
   className,
+  size = 'md',
 }: {
   priority: Priority;
   className?: string;
+  size?: 'sm' | 'md';
 }) {
   if (!priority) return null;
 
   const config = priorityConfig[priority];
 
+  const sizeClasses = {
+    sm: 'gap-1 px-1.5 py-0.5 text-[10px]',
+    md: 'gap-1.5 px-2 py-0.5 text-xs',
+  };
+
+  const iconSizes = {
+    sm: 'h-2.5 w-2.5',
+    md: 'h-3 w-3',
+  };
+
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium',
+        'inline-flex items-center rounded-md font-medium',
+        sizeClasses[size],
         config.bg,
         config.text,
         className
       )}
     >
-      <Flag className="h-3 w-3" />
+      <Flag className={iconSizes[size]} />
       {config.label}
     </span>
   );

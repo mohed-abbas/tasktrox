@@ -1,5 +1,14 @@
 // Custom Icons
 export { Logo, LogoIcon } from './Logo';
+export {
+  BoardIcon,
+  ListIcon,
+  GridIcon,
+  SearchStatusIcon,
+  FilterFunnelIcon,
+  TagLabelIcon,
+  PlusTaskIcon,
+} from './ViewIcons';
 
 // Re-export commonly used Lucide icons for consistency
 // Map Figma icon names to Lucide equivalents

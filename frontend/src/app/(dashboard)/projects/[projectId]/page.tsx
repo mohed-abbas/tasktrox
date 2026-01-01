@@ -2,17 +2,18 @@
 
 import { use, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Settings, LayoutGrid, List, Columns3, Loader2, AlertCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Loader2, AlertCircle, Settings, LogOut } from 'lucide-react';
+import { ViewNav, type ViewType } from '@/components/app';
 import { getProject, type Project } from '@/lib/api/projects';
 import { Board, type Task, type ColumnWithTasks } from '@/components/board';
+import { ListView, GridView } from '@/components/views';
 import { TaskDetailModal } from '@/components/task';
 import { toast } from 'sonner';
-import { useColumns, useTasks, useTask, useLabels } from '@/hooks';
+import { useColumns, useTasks, useTask, useLabels, useViewPreference, useProjectMembers, useAuth, useFilters, type ViewMode } from '@/hooks';
 import { setTaskLabels } from '@/lib/api/labels';
-
-type ViewMode = 'board' | 'list' | 'grid';
+import { FilterPanel } from '@/components/filter';
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -21,11 +22,52 @@ interface ProjectPageProps {
 export default function ProjectPage({ params }: ProjectPageProps) {
   const { projectId } = use(params);
   const queryClient = useQueryClient();
-  const [viewMode, setViewMode] = useState<ViewMode>('board');
+  const router = useRouter();
+
+  // View preference with localStorage persistence
+  const { viewMode, setViewMode } = useViewPreference({ projectId });
+
+  // Get current user
+  const { user } = useAuth();
+
+  // Get user's role and permissions for this project
+  const {
+    members: projectMembers,
+    canEditTasks,
+    canAccessSettings,
+    isViewer,
+    removeMember,
+    isRemoving,
+  } = useProjectMembers({ projectId });
+
+  // Filter state management
+  const {
+    filters,
+    setFilters,
+    filterTasks,
+    hasActiveFilters,
+  } = useFilters();
+
+  // Leave project handler (for viewers)
+  const handleLeaveProject = useCallback(async () => {
+    if (!user?.id) return;
+    if (!confirm('Are you sure you want to leave this project?')) return;
+
+    try {
+      await removeMember(user.id);
+      router.push('/projects');
+    } catch {
+      // Error toast is handled by the mutation
+    }
+  }, [user?.id, removeMember, router]);
 
   // Task detail modal state
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Fetch project data
   const {
@@ -126,17 +168,49 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     return await createLabel({ name, color });
   }, [createLabel]);
 
-  // Combine columns with their tasks for the Board component
+  // Transform project members for FilterPanel
+  const filterMembers = useMemo(() =>
+    projectMembers.map(m => ({
+      id: m.user.id,
+      name: m.user.name,
+      avatar: m.user.avatar,
+    }))
+  , [projectMembers]);
+
+  // Apply filters and search to tasks
+  const filteredTasksByColumn = useMemo(() => {
+    const result: Record<string, Task[]> = {};
+
+    for (const [columnId, tasks] of Object.entries(tasksByColumn)) {
+      // Apply filter criteria (priority, labels, assignees, dueDate)
+      let filtered = filterTasks(tasks);
+
+      // Apply text search on title and description
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter(task =>
+          task.title.toLowerCase().includes(query) ||
+          task.description?.toLowerCase().includes(query)
+        );
+      }
+
+      result[columnId] = filtered;
+    }
+
+    return result;
+  }, [tasksByColumn, filterTasks, searchQuery]);
+
+  // Combine columns with their filtered tasks for the Board component
   // Must be called before any early returns (Rules of Hooks)
   const columns = project?.columns || [];
   const columnsWithTasks: ColumnWithTasks[] = useMemo(() => {
     return columns
       .map((col) => ({
         ...col,
-        tasks: (tasksByColumn[col.id] || []) as Task[],
+        tasks: (filteredTasksByColumn[col.id] || []) as Task[],
       }))
       .sort((a, b) => a.order - b.order);
-  }, [columns, tasksByColumn]);
+  }, [columns, filteredTasksByColumn]);
 
   // Loading state
   if (isLoading) {
@@ -170,115 +244,130 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   return (
     <div className="flex flex-col h-full -m-4">
       {/* Project Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white">
-        <div>
-          <h1 className="text-base font-semibold text-gray-800">
-            {project.name}
-          </h1>
-          {project.description && (
-            <p className="text-xs text-gray-500 mt-0.5">
-              {project.description}
-            </p>
-          )}
-        </div>
+      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+        <h1 className="text-2xl font-semibold text-gray-800 leading-tight">
+          {project.name}
+        </h1>
 
         <div className="flex items-center gap-2">
-          {/* View Mode Switcher */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode('board')}
-              className={cn(
-                'p-1.5 rounded-md transition-colors',
-                viewMode === 'board'
-                  ? 'bg-white shadow-sm text-gray-800'
-                  : 'text-gray-500 hover:text-gray-700'
-              )}
-              title="Board View"
+          {/* Admin/Member: Settings */}
+          {canAccessSettings ? (
+            <Link
+              href={`/projects/${projectId}/settings`}
+              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+              title="Project Settings"
             >
-              <Columns3 className="size-4" />
-            </button>
+              <Settings size={20} />
+            </Link>
+          ) : isViewer ? (
+            /* Viewer: Leave Project */
             <button
-              onClick={() => setViewMode('list')}
-              className={cn(
-                'p-1.5 rounded-md transition-colors',
-                viewMode === 'list'
-                  ? 'bg-white shadow-sm text-gray-800'
-                  : 'text-gray-500 hover:text-gray-700'
-              )}
-              title="List View"
+              type="button"
+              onClick={handleLeaveProject}
+              disabled={isRemoving}
+              className="p-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
+              title="Leave Project"
             >
-              <List className="size-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className={cn(
-                'p-1.5 rounded-md transition-colors',
-                viewMode === 'grid'
-                  ? 'bg-white shadow-sm text-gray-800'
-                  : 'text-gray-500 hover:text-gray-700'
+              {isRemoving ? (
+                <Loader2 size={20} className="animate-spin" />
+              ) : (
+                <LogOut size={20} />
               )}
-              title="Grid View"
-            >
-              <LayoutGrid className="size-4" />
             </button>
-          </div>
-
-          {/* Settings Link */}
-          <Link
-            href={`/projects/${projectId}/settings`}
-            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-            title="Project Settings"
-          >
-            <Settings className="size-5" />
-          </Link>
+          ) : null}
         </div>
       </div>
 
-      {/* Board View */}
-      <div className="flex-1 overflow-x-auto p-4">
-        <Board
-          columns={columnsWithTasks}
-          projectId={projectId}
-          isLoading={isLoadingTasks}
-          onAddTask={(columnId, title) => {
-            createTask({
-              title,
-              columnId,
-            });
-          }}
-          onAddColumn={(name) => {
-            createColumn({
-              name,
-              order: columns.length,
-            });
-          }}
-          onEditColumn={(columnId, name) => {
-            updateColumn({
-              columnId,
-              data: { name },
-            });
-          }}
-          onDeleteColumn={(columnId) => {
-            deleteColumn(columnId);
-          }}
-          onTaskClick={handleTaskClick}
-          onMoveTask={(taskId, sourceColumnId, targetColumnId, newOrder) => {
-            moveTask({
-              taskId,
-              sourceColumnId,
-              data: {
-                targetColumnId: targetColumnId,
-                order: newOrder,
-              },
-            });
-          }}
-          onReorderColumn={(columnId, newOrder) => {
-            reorderColumn({
-              columnId,
-              newOrder,
-            });
-          }}
+      {/* View Navigation Bar */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <ViewNav
+          activeView={viewMode as ViewType}
+          onViewChange={(view) => setViewMode(view as ViewMode)}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onFilterClick={() => setIsFilterOpen(!isFilterOpen)}
+          hasActiveFilters={hasActiveFilters}
         />
+      </div>
+
+      {/* Filter Panel - shown when filter is open */}
+      {isFilterOpen && (
+        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+          <FilterPanel
+            filters={filters}
+            onFiltersChange={setFilters}
+            labels={projectLabels}
+            members={filterMembers}
+          />
+        </div>
+      )}
+
+      {/* View Content */}
+      <div className="flex-1 overflow-auto p-4">
+        {viewMode === 'board' && (
+          <Board
+            columns={columnsWithTasks}
+            projectId={projectId}
+            isLoading={isLoadingTasks}
+            readOnly={!canEditTasks}
+            onAddTask={(columnId, title) => {
+              createTask({
+                title,
+                columnId,
+              });
+            }}
+            onAddColumn={(name) => {
+              createColumn({
+                name,
+                order: columns.length,
+              });
+            }}
+            onEditColumn={(columnId, name) => {
+              updateColumn({
+                columnId,
+                data: { name },
+              });
+            }}
+            onDeleteColumn={(columnId) => {
+              deleteColumn(columnId);
+            }}
+            onTaskClick={handleTaskClick}
+            onMoveTask={(taskId, sourceColumnId, targetColumnId, newOrder) => {
+              moveTask({
+                taskId,
+                sourceColumnId,
+                data: {
+                  targetColumnId: targetColumnId,
+                  order: newOrder,
+                },
+              });
+            }}
+            onReorderColumn={(columnId, newOrder) => {
+              reorderColumn({
+                columnId,
+                newOrder,
+              });
+            }}
+          />
+        )}
+
+        {viewMode === 'list' && (
+          <ListView
+            columns={columnsWithTasks}
+            projectId={projectId}
+            isLoading={isLoadingTasks}
+            onTaskClick={handleTaskClick}
+          />
+        )}
+
+        {viewMode === 'grid' && (
+          <GridView
+            columns={columnsWithTasks}
+            projectId={projectId}
+            isLoading={isLoadingTasks}
+            onTaskClick={handleTaskClick}
+          />
+        )}
       </div>
 
       {/* Task Detail Modal */}
@@ -286,12 +375,14 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         task={selectedTask || null}
         open={isModalOpen}
         onOpenChange={handleModalClose}
-        onUpdate={handleTaskUpdate}
-        onDelete={handleTaskDelete}
+        onUpdate={canEditTasks ? handleTaskUpdate : undefined}
+        onDelete={canEditTasks ? handleTaskDelete : undefined}
         isLoading={isLoadingTask}
         projectLabels={projectLabels}
-        onLabelsChange={handleLabelsChange}
-        onCreateLabel={handleCreateLabel}
+        onLabelsChange={canEditTasks ? handleLabelsChange : undefined}
+        onCreateLabel={canEditTasks ? handleCreateLabel : undefined}
+        projectId={projectId}
+        readOnly={!canEditTasks}
       />
     </div>
   );

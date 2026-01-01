@@ -12,9 +12,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { DatePicker } from './DatePicker';
 import { PrioritySelector, type Priority } from './PrioritySelector';
+import { AssigneeSelector, AssigneeAvatarStack } from './AssigneeSelector';
 import { SaveIndicator } from './SaveIndicator';
 import { LabelSelector, LabelBadge } from '@/components/labels';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useAssignees } from '@/hooks/useAssignees';
 import type { Task } from '@/lib/api/tasks';
 import type { Label } from '@/lib/api/labels';
 
@@ -95,6 +97,10 @@ export interface TaskDetailModalProps {
   projectLabels?: Label[];
   onLabelsChange?: (taskId: string, labelIds: string[]) => void;
   onCreateLabel?: (name: string, color: string) => Promise<Label>;
+  // Project context for assignees
+  projectId?: string;
+  /** When true, disables all editing (for VIEWER role) */
+  readOnly?: boolean;
 }
 
 export function TaskDetailModal({
@@ -107,23 +113,40 @@ export function TaskDetailModal({
   projectLabels = [],
   onLabelsChange,
   onCreateLabel,
+  projectId,
+  readOnly = false,
 }: TaskDetailModalProps) {
   // Local state for editing
   const [editableData, setEditableData] = useState<EditableTaskData>({
-    title: task?.title || '',
-    description: task?.description || null,
-    priority: (task?.priority as Priority) || null,
-    dueDate: task?.dueDate || null,
+    title: task?.title ?? '',
+    description: task?.description ?? null,
+    priority: (task?.priority as Priority) ?? null,
+    dueDate: task?.dueDate ?? null,
   });
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Assignees hook - only enabled when we have projectId and taskId
+  const {
+    assignees,
+    members,
+    addAssignee,
+    removeAssignee,
+    isLoading: isAssigneesLoading,
+    isMembersLoading,
+    isMutating: isAssigneeMutating,
+  } = useAssignees({
+    projectId: projectId || '',
+    taskId: task?.id,
+    enabled: open && !!projectId && !!task?.id,
+  });
 
   // Original data for comparison (memoized to avoid unnecessary re-renders)
   const originalData = useMemo<EditableTaskData>(
     () => ({
-      title: task?.title || '',
-      description: task?.description || null,
-      priority: (task?.priority as Priority) || null,
-      dueDate: task?.dueDate || null,
+      title: task?.title ?? '',
+      description: task?.description ?? null,
+      priority: (task?.priority as Priority) ?? null,
+      dueDate: task?.dueDate ?? null,
     }),
     [task?.title, task?.description, task?.priority, task?.dueDate]
   );
@@ -164,10 +187,10 @@ export function TaskDetailModal({
   useEffect(() => {
     if (task) {
       setEditableData({
-        title: task.title,
-        description: task.description || null,
-        priority: (task.priority as Priority) || null,
-        dueDate: task.dueDate || null,
+        title: task.title ?? '',
+        description: task.description ?? null,
+        priority: (task.priority as Priority) ?? null,
+        dueDate: task.dueDate ?? null,
       });
     }
   }, [task]);
@@ -232,7 +255,7 @@ export function TaskDetailModal({
     if (e.key === 'Escape') {
       e.stopPropagation();
       // Reset to original value
-      setEditableData((prev) => ({ ...prev, title: task?.title || '' }));
+      setEditableData((prev) => ({ ...prev, title: task?.title ?? '' }));
       (e.target as HTMLInputElement).blur();
     }
   };
@@ -311,43 +334,47 @@ export function TaskDetailModal({
                       value={editableData.title}
                       onChange={(e) => handleTitleChange(e.target.value)}
                       onKeyDown={handleTitleKeyDown}
+                      disabled={readOnly}
                       className={cn(
                         'w-full text-xl font-semibold text-gray-900',
                         'bg-transparent border-0 outline-none',
                         'focus:ring-0 p-0',
-                        'placeholder:text-gray-400'
+                        'placeholder:text-gray-400',
+                        readOnly && 'cursor-default'
                       )}
                       placeholder="Task title..."
-                      autoFocus
+                      autoFocus={!readOnly}
                     />
                   </div>
 
                   {/* Save Indicator + Actions */}
                   <div className="flex items-center gap-2">
-                    <SaveIndicator status={saveStatus} error={saveError} />
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          className={cn(
-                            'p-2 rounded-lg text-gray-400',
-                            'hover:bg-gray-100 hover:text-gray-600',
-                            'transition-colors'
-                          )}
-                        >
-                          <MoreHorizontal className="size-5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem
-                          className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                          onClick={handleDelete}
-                          disabled={isDeleting}
-                        >
-                          <Trash2 className="size-4 mr-2" />
-                          {isDeleting ? 'Deleting...' : 'Delete Task'}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {!readOnly && <SaveIndicator status={saveStatus} error={saveError} />}
+                    {!readOnly && onDelete && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className={cn(
+                              'p-2 rounded-lg text-gray-400',
+                              'hover:bg-gray-100 hover:text-gray-600',
+                              'transition-colors'
+                            )}
+                          >
+                            <MoreHorizontal className="size-5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                          >
+                            <Trash2 className="size-4 mr-2" />
+                            {isDeleting ? 'Deleting...' : 'Delete Task'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
 
                     <button
                       onClick={() => onOpenChange(false)}
@@ -377,6 +404,7 @@ export function TaskDetailModal({
                         onChange={handlePriorityChange}
                         showLabel={false}
                         className="w-full"
+                        disabled={readOnly}
                       />
                     </div>
 
@@ -389,6 +417,7 @@ export function TaskDetailModal({
                         value={dueDate}
                         onChange={handleDueDateChange}
                         className="w-full"
+                        disabled={readOnly}
                       />
                     </div>
                   </motion.div>
@@ -401,13 +430,15 @@ export function TaskDetailModal({
                     <textarea
                       value={editableData.description || ''}
                       onChange={(e) => handleDescriptionChange(e.target.value)}
-                      placeholder="Add a description..."
+                      placeholder={readOnly ? 'No description' : 'Add a description...'}
                       rows={4}
+                      disabled={readOnly}
                       className={cn(
                         'w-full px-3 py-2 rounded-lg border border-gray-200',
                         'text-sm text-gray-700 placeholder:text-gray-400',
                         'focus:border-gray-400 focus:ring-2 focus:ring-gray-800/10',
-                        'outline-none transition-colors resize-none'
+                        'outline-none transition-colors resize-none',
+                        readOnly && 'bg-gray-50 cursor-default'
                       )}
                     />
                   </motion.div>
@@ -442,7 +473,7 @@ export function TaskDetailModal({
                         </motion.div>
                       ))}
 
-                      {/* Label selector */}
+                      {/* Label selector - only show when can edit */}
                       {onLabelsChange && (
                         <LabelSelector
                           projectLabels={projectLabels}
@@ -452,41 +483,48 @@ export function TaskDetailModal({
                           className="border-dashed"
                         />
                       )}
+
+                      {/* Show message when no labels and read-only */}
+                      {readOnly && (!task.labels || task.labels.length === 0) && (
+                        <span className="text-sm text-gray-400">No labels</span>
+                      )}
                     </div>
                   </motion.div>
 
-                  {/* Assignees Section (placeholder for Phase 4C) */}
-                  {task.assignees && task.assignees.length > 0 && (
+                  {/* Assignees Section */}
+                  {projectId && (
                     <motion.div variants={itemVariants} className="space-y-2">
                       <label className="text-sm font-medium text-gray-700">
                         Assignees
                       </label>
-                      <div className="flex flex-wrap gap-2">
-                        {task.assignees.map((assignee, index) => (
-                          <motion.div
-                            key={assignee.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            whileHover={{ scale: 1.02 }}
-                            className="flex items-center gap-2 px-2 py-1 rounded-lg bg-gray-100"
-                          >
-                            <div className="size-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-medium text-gray-600 overflow-hidden">
-                              {assignee.avatar ? (
-                                <img
-                                  src={assignee.avatar}
-                                  alt={assignee.name}
-                                  className="size-full object-cover"
-                                />
-                              ) : (
-                                assignee.name.charAt(0).toUpperCase()
-                              )}
-                            </div>
-                            <span className="text-sm text-gray-700">
-                              {assignee.name}
-                            </span>
-                          </motion.div>
-                        ))}
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Display current assignees as avatars */}
+                        {assignees.length > 0 && (
+                          <AssigneeAvatarStack
+                            assignees={assignees}
+                            max={5}
+                            size="md"
+                            onRemove={readOnly ? undefined : removeAssignee}
+                          />
+                        )}
+
+                        {/* Assignee selector to add/remove - hide when read-only */}
+                        {!readOnly && (
+                          <AssigneeSelector
+                            assignees={assignees}
+                            members={members}
+                            onAdd={addAssignee}
+                            onRemove={removeAssignee}
+                            disabled={isAssigneeMutating}
+                            isLoading={isAssigneesLoading || isMembersLoading}
+                            className="border-dashed"
+                          />
+                        )}
+
+                        {/* Show message when no assignees and read-only */}
+                        {readOnly && assignees.length === 0 && (
+                          <span className="text-sm text-gray-400">No assignees</span>
+                        )}
                       </div>
                     </motion.div>
                   )}

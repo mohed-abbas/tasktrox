@@ -264,15 +264,27 @@ export interface LabelBadgeProps {
   label: DisplayLabel;
   onRemove?: () => void;
   className?: string;
+  size?: 'sm' | 'md';
 }
 
-export function LabelBadge({ label, onRemove, className }: LabelBadgeProps) {
+export function LabelBadge({
+  label,
+  onRemove,
+  className,
+  size = 'md',
+}: LabelBadgeProps) {
   const styles = getLabelStyles(label.color);
+
+  const sizeClasses = {
+    sm: 'px-1.5 py-0.5 text-[10px] gap-0.5',
+    md: 'px-2 py-0.5 text-xs gap-1',
+  };
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
+        'inline-flex items-center rounded-full font-medium',
+        sizeClasses[size],
         styles.bg,
         styles.text,
         className
@@ -288,7 +300,7 @@ export function LabelBadge({ label, onRemove, className }: LabelBadgeProps) {
           }}
           className="hover:opacity-70 transition-opacity"
         >
-          <X className="h-3 w-3" />
+          <X className={size === 'sm' ? 'h-2.5 w-2.5' : 'h-3 w-3'} />
         </button>
       )}
     </span>

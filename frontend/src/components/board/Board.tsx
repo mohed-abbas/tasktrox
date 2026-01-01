@@ -44,6 +44,8 @@ interface BoardProps {
   onMoveTask?: (taskId: string, sourceColumnId: string, targetColumnId: string, newOrder: number) => void;
   onReorderColumn?: (columnId: string, newOrder: number) => void;
   isLoading?: boolean;
+  /** When true, disables drag-and-drop, task creation, and column editing (for VIEWER role) */
+  readOnly?: boolean;
 }
 
 export function Board({
@@ -57,6 +59,7 @@ export function Board({
   onMoveTask,
   onReorderColumn,
   isLoading = false,
+  readOnly = false,
 }: BoardProps) {
   // Use custom DnD hook for all drag-and-drop logic
   const {
@@ -120,15 +123,50 @@ export function Board({
             No columns yet
           </h3>
           <p className="text-sm text-gray-500 mb-6">
-            Start by adding your first column to organize your tasks.
+            {readOnly
+              ? 'This project has no columns.'
+              : 'Start by adding your first column to organize your tasks.'}
           </p>
-          <AddColumn
-            onSubmit={(name) => onAddColumn?.(name)}
-            placeholder="e.g., To Do, In Progress, Done..."
-          />
+          {!readOnly && (
+            <AddColumn
+              onSubmit={(name) => onAddColumn?.(name)}
+              placeholder="e.g., To Do, In Progress, Done..."
+            />
+          )}
         </div>
       </div>
     );
+  }
+
+  // Render board content
+  const boardContent = (
+    <div className="flex gap-4 h-full min-w-max">
+      {/* Sortable Columns */}
+      <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+        {sortedColumns.map((column) => (
+          <SortableColumn
+            key={column.id}
+            id={column.id}
+            name={column.name}
+            tasks={column.tasks || []}
+            onAddTask={readOnly ? undefined : (title) => onAddTask?.(column.id, title)}
+            onEditColumn={readOnly ? undefined : () => onEditColumn?.(column.id, column.name)}
+            onDeleteColumn={readOnly ? undefined : () => onDeleteColumn?.(column.id)}
+            onTaskClick={onTaskClick}
+            isDraggingTask={activeItem?.type === 'task'}
+            isEditable={!readOnly}
+          />
+        ))}
+      </SortableContext>
+
+      {/* Add Column Button - hide when read-only */}
+      {!readOnly && <AddColumn onSubmit={(name) => onAddColumn?.(name)} />}
+    </div>
+  );
+
+  // When read-only, don't use DnD context
+  if (readOnly) {
+    return boardContent;
   }
 
   return (
@@ -139,27 +177,7 @@ export function Board({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 h-full min-w-max">
-        {/* Sortable Columns */}
-        <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-          {sortedColumns.map((column) => (
-            <SortableColumn
-              key={column.id}
-              id={column.id}
-              name={column.name}
-              tasks={column.tasks || []}
-              onAddTask={(title) => onAddTask?.(column.id, title)}
-              onEditColumn={() => onEditColumn?.(column.id, column.name)}
-              onDeleteColumn={() => onDeleteColumn?.(column.id)}
-              onTaskClick={onTaskClick}
-              isDraggingTask={activeItem?.type === 'task'}
-            />
-          ))}
-        </SortableContext>
-
-        {/* Add Column Button */}
-        <AddColumn onSubmit={(name) => onAddColumn?.(name)} />
-      </div>
+      {boardContent}
 
       {/* Drag Overlay - Shows preview of dragged item */}
       <DragOverlay>
