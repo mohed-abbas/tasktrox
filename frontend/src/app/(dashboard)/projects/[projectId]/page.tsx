@@ -244,12 +244,12 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   return (
     <div className="flex flex-col h-full -m-4">
       {/* Project Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
-        <h1 className="text-2xl font-semibold text-gray-800 leading-tight">
+      <div className="flex items-center justify-between px-3 sm:px-4 py-3 sm:py-4 border-b border-gray-200">
+        <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 leading-tight truncate max-w-[200px] sm:max-w-[300px] lg:max-w-none">
           {project.name}
         </h1>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* Admin/Member: Settings */}
           {canAccessSettings ? (
             <Link
@@ -279,7 +279,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       </div>
 
       {/* View Navigation Bar */}
-      <div className="px-4 py-3 border-b border-gray-100">
+      <div className="px-3 sm:px-4 py-3 border-b border-gray-100">
         <ViewNav
           activeView={viewMode as ViewType}
           onViewChange={(view) => setViewMode(view as ViewMode)}
@@ -292,7 +292,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
 
       {/* Filter Panel - shown when filter is open */}
       {isFilterOpen && (
-        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+        <div className="px-3 sm:px-4 py-3 border-b border-gray-100 bg-gray-50/50">
           <FilterPanel
             filters={filters}
             onFiltersChange={setFilters}
@@ -303,7 +303,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       )}
 
       {/* View Content */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-3 sm:p-4">
         {viewMode === 'board' && (
           <Board
             columns={columnsWithTasks}

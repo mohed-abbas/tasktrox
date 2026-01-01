@@ -63,11 +63,14 @@ export function ViewNav({
 
   return (
     <nav
-      className={cn('flex items-center justify-between w-full', className)}
+      className={cn(
+        'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 w-full',
+        className
+      )}
       aria-label="View navigation"
     >
       {/* View Toggle Buttons */}
-      <div className="flex items-center gap-3" role="tablist" aria-label="View options">
+      <div className="flex items-center gap-1.5 sm:gap-3" role="tablist" aria-label="View options">
         {viewOptions.map(({ id, label, icon: Icon }) => {
           const isActive = activeView === id;
           return (
@@ -79,7 +82,7 @@ export function ViewNav({
               aria-controls={`${id}-view`}
               onClick={() => handleViewChange(id)}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-2 rounded-lg text-base font-normal transition-all duration-200',
+                'flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-base font-normal transition-all duration-200',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2',
                 isActive
                   ? 'bg-white border border-gray-100 text-gray-700 shadow-sm'
@@ -87,17 +90,18 @@ export function ViewNav({
               )}
             >
               <Icon size={20} className="text-gray-700" />
-              <span>{label}</span>
+              {/* Hide label on mobile, show on sm+ */}
+              <span className="hidden sm:inline">{label}</span>
             </button>
           );
         })}
       </div>
 
       {/* Search and Filter */}
-      <div className="flex items-center gap-3">
-        {/* Search Bar */}
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Search Bar - full width on mobile, fixed on larger screens */}
+        <div className="relative flex-1 sm:flex-none">
+          <div className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 pointer-events-none">
             <SearchStatusIcon size={20} className="text-gray-400" />
           </div>
           <input
@@ -106,7 +110,7 @@ export function ViewNav({
             value={searchValue}
             onChange={(e) => handleSearchChange(e.target.value)}
             className={cn(
-              'w-[270px] h-10 pl-11 pr-4 rounded-md border border-gray-200',
+              'w-full sm:w-[200px] lg:w-[270px] h-10 pl-10 sm:pl-11 pr-4 rounded-md border border-gray-200',
               'text-sm text-gray-700 placeholder:text-gray-400',
               'focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent',
               'transition-all duration-200'
@@ -115,12 +119,12 @@ export function ViewNav({
           />
         </div>
 
-        {/* Filter Button */}
+        {/* Filter Button - icon only on mobile, with label on sm+ */}
         <button
           type="button"
           onClick={onFilterClick}
           className={cn(
-            'flex items-center gap-1.5 px-3 py-2 rounded-md border',
+            'flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-md border',
             'text-sm font-normal',
             'hover:bg-gray-50 transition-all duration-200',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2',
@@ -131,7 +135,8 @@ export function ViewNav({
           aria-label="Open filters"
         >
           <FilterFunnelIcon size={20} className={hasActiveFilters ? 'text-primary-600' : 'text-gray-800'} />
-          <span>Filter</span>
+          {/* Hide label on mobile, show on sm+ */}
+          <span className="hidden sm:inline">Filter</span>
           {hasActiveFilters && (
             <span className="ml-0.5 w-2 h-2 rounded-full bg-primary-500" />
           )}
