@@ -1,13 +1,16 @@
 'use client';
 
-import { use, useState, useMemo } from 'react';
+import { use, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Settings, LayoutGrid, List, Columns3, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getProject, type Project } from '@/lib/api/projects';
 import { Board, type Task, type ColumnWithTasks } from '@/components/board';
-import { useColumns, useTasks } from '@/hooks';
+import { TaskDetailModal } from '@/components/task';
+import { toast } from 'sonner';
+import { useColumns, useTasks, useTask, useLabels } from '@/hooks';
+import { setTaskLabels } from '@/lib/api/labels';
 
 type ViewMode = 'board' | 'list' | 'grid';
 
@@ -17,7 +20,12 @@ interface ProjectPageProps {
 
 export default function ProjectPage({ params }: ProjectPageProps) {
   const { projectId } = use(params);
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>('board');
+
+  // Task detail modal state
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch project data
   const {
@@ -43,7 +51,80 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     isLoadingTasks,
     createTask,
     moveTask,
+    updateTask: updateTaskFromList,
+    deleteTask: deleteTaskFromList,
   } = useTasks({ projectId });
+
+  // Single task operations for the modal
+  const {
+    task: selectedTask,
+    isLoading: isLoadingTask,
+    updateTask,
+    deleteTask,
+  } = useTask({
+    projectId,
+    taskId: selectedTaskId,
+    enabled: isModalOpen && !!selectedTaskId,
+  });
+
+  // Labels for the project
+  const {
+    labels: projectLabels,
+    createLabel,
+  } = useLabels({ projectId });
+
+  // Handle task click - open modal
+  const handleTaskClick = useCallback((task: Task) => {
+    setSelectedTaskId(task.id);
+    setIsModalOpen(true);
+  }, []);
+
+  // Handle modal close
+  const handleModalClose = useCallback((open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+      // Delay clearing selected task to allow exit animation
+      setTimeout(() => setSelectedTaskId(null), 200);
+    }
+  }, []);
+
+  // Handle task update from modal
+  const handleTaskUpdate = useCallback((taskId: string, data: Partial<Task>) => {
+    // Convert to UpdateTaskInput format
+    updateTask({
+      title: data.title,
+      description: data.description ?? undefined,
+      priority: data.priority ?? undefined,
+      dueDate: data.dueDate ?? undefined,
+    });
+  }, [updateTask]);
+
+  // Handle task delete from modal
+  const handleTaskDelete = useCallback((taskId: string) => {
+    deleteTask();
+  }, [deleteTask]);
+
+  // Handle labels change for a task
+  const handleLabelsChange = useCallback(async (taskId: string, labelIds: string[]) => {
+    try {
+      await setTaskLabels(projectId, taskId, labelIds);
+      // Invalidate queries to refresh labels
+      queryClient.invalidateQueries({ queryKey: ['task', projectId, taskId] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      toast.success('Labels updated');
+    } catch (error) {
+      console.error('Failed to update labels:', error);
+      toast.error('Failed to update labels', {
+        description: error instanceof Error ? error.message : 'Please try again',
+      });
+    }
+  }, [projectId, queryClient]);
+
+  // Handle creating a new label from the task modal
+  const handleCreateLabel = useCallback(async (name: string, color: string) => {
+    return await createLabel({ name, color });
+  }, [createLabel]);
 
   // Combine columns with their tasks for the Board component
   // Must be called before any early returns (Rules of Hooks)
@@ -180,10 +261,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
           onDeleteColumn={(columnId) => {
             deleteColumn(columnId);
           }}
-          onTaskClick={(task) => {
-            // TODO: Implement task detail modal (Phase 3.7)
-            console.log('Task clicked:', task);
-          }}
+          onTaskClick={handleTaskClick}
           onMoveTask={(taskId, sourceColumnId, targetColumnId, newOrder) => {
             moveTask({
               taskId,
@@ -202,6 +280,19 @@ export default function ProjectPage({ params }: ProjectPageProps) {
           }}
         />
       </div>
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        task={selectedTask || null}
+        open={isModalOpen}
+        onOpenChange={handleModalClose}
+        onUpdate={handleTaskUpdate}
+        onDelete={handleTaskDelete}
+        isLoading={isLoadingTask}
+        projectLabels={projectLabels}
+        onLabelsChange={handleLabelsChange}
+        onCreateLabel={handleCreateLabel}
+      />
     </div>
   );
 }

@@ -4,8 +4,10 @@ import { use, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Trash2, Loader2, AlertCircle, Tag } from 'lucide-react';
 import { getProject, updateProject, deleteProject, type Project } from '@/lib/api/projects';
+import { useLabels } from '@/hooks';
+import { ManageLabels } from '@/components/labels';
 
 interface ProjectSettingsPageProps {
   params: Promise<{ projectId: string }>;
@@ -18,6 +20,16 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [labelsDialogOpen, setLabelsDialogOpen] = useState(false);
+
+  // Labels hook for project label management
+  const {
+    labels,
+    isLoading: labelsLoading,
+    createLabel,
+    updateLabel,
+    deleteLabel,
+  } = useLabels({ projectId });
 
   // Fetch project data
   const {
@@ -160,6 +172,47 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
           </div>
         </form>
       </div>
+
+      {/* Labels Management */}
+      <div className="bg-white rounded-card border border-gray-200 shadow-card">
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                <Tag className="size-4" />
+                Labels
+              </h2>
+              <p className="text-sm text-gray-500">
+                Manage labels to organize and categorize your tasks.
+                {labels.length > 0 && (
+                  <span className="ml-1 text-gray-400">
+                    ({labels.length} label{labels.length !== 1 ? 's' : ''})
+                  </span>
+                )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLabelsDialogOpen(true)}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Tag className="size-4" />
+              Manage Labels
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ManageLabels Dialog */}
+      <ManageLabels
+        open={labelsDialogOpen}
+        onOpenChange={setLabelsDialogOpen}
+        labels={labels}
+        onCreateLabel={createLabel}
+        onUpdateLabel={updateLabel}
+        onDeleteLabel={deleteLabel}
+        isLoading={labelsLoading}
+      />
 
       {/* Danger Zone */}
       <div className="bg-white rounded-card border border-red-200 shadow-card">

@@ -1,5 +1,8 @@
 // Custom React hooks
 
+// Auth hook
+export { useAuth, AuthProvider } from './useAuth';
+
 // Board drag-and-drop hook
 export { useBoardDnd } from './useBoardDnd';
 export type {
@@ -15,3 +18,9 @@ export { useColumns } from './useColumns';
 // Task operations hook with optimistic updates
 export { useTasks } from './useTasks';
 export type { TaskWithColumn } from './useTasks';
+
+// Single task operations hook
+export { useTask } from './useTask';
+
+// Label operations hook
+export { useLabels } from './useLabels';

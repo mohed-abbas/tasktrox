@@ -3,43 +3,8 @@
 import { forwardRef } from 'react';
 import { Calendar, Paperclip } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getLabelStyles } from '@/components/labels';
 import type { Task } from './Board';
-
-// Label color configuration based on Figma design
-const labelColors: Record<string, { bg: string; text: string }> = {
-  // Green (UI/UX, etc.)
-  green: { bg: 'bg-[#ECFDF5]', text: 'text-[#10B981]' },
-  // Yellow (Design, etc.)
-  yellow: { bg: 'bg-[#FFFBEB]', text: 'text-[#F59E0B]' },
-  // Blue (High priority, etc.)
-  blue: { bg: 'bg-[#EFF6FF]', text: 'text-[#3B82F6]' },
-  // Purple (Wireframe, etc.)
-  purple: { bg: 'bg-[#F5F3FF]', text: 'text-[#8B5CF6]' },
-  // Pink (Prototype, etc.)
-  pink: { bg: 'bg-[#FDF2F8]', text: 'text-[#EC4899]' },
-  // Gray (default)
-  gray: { bg: 'bg-gray-100', text: 'text-gray-600' },
-};
-
-// Helper to get closest label color based on hex value
-function getLabelColor(hexColor: string): { bg: string; text: string } {
-  const colorMap: Record<string, string> = {
-    '#10B981': 'green',
-    '#059669': 'green',
-    '#F59E0B': 'yellow',
-    '#D97706': 'yellow',
-    '#3B82F6': 'blue',
-    '#2563EB': 'blue',
-    '#8B5CF6': 'purple',
-    '#7C3AED': 'purple',
-    '#EC4899': 'pink',
-    '#DB2777': 'pink',
-  };
-
-  const normalizedHex = hexColor.toUpperCase();
-  const colorKey = colorMap[normalizedHex] || 'gray';
-  return labelColors[colorKey];
-}
 
 // Format date for display
 function formatDate(dateString: string | null): string | null {
@@ -124,14 +89,14 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
             {hasLabels && (
               <div className="flex flex-wrap items-center gap-2">
                 {task.labels!.map((label) => {
-                  const colors = getLabelColor(label.color);
+                  const styles = getLabelStyles(label.color);
                   return (
                     <span
                       key={label.id}
                       className={cn(
-                        'px-2.5 py-1 rounded-[10px] text-xs leading-normal',
-                        colors.bg,
-                        colors.text
+                        'px-2.5 py-1 rounded-[10px] text-xs font-medium leading-normal',
+                        styles.bg,
+                        styles.text
                       )}
                     >
                       {label.name}

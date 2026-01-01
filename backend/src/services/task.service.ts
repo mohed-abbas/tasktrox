@@ -21,12 +21,41 @@ type TaskWithRelations = Task & {
     email: string;
     avatar: string | null;
   };
+  labels?: {
+    id: string;
+    name: string;
+    color: string;
+  }[];
+  assignees?: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  }[];
   _count?: {
     assignees: number;
     attachments: number;
     comments: number;
   };
 };
+
+// Raw Prisma result type (with nested label/user objects)
+type PrismaTaskResult = Omit<TaskWithRelations, 'labels' | 'assignees'> & {
+  labels?: { label: { id: string; name: string; color: string } }[];
+  assignees?: { user: { id: string; name: string; avatar: string | null } }[];
+};
+
+// Transform Prisma result to expected format (flatten nested relations)
+function transformTask(task: PrismaTaskResult): TaskWithRelations {
+  return {
+    ...task,
+    labels: task.labels?.map((tl) => tl.label),
+    assignees: task.assignees?.map((ta) => ta.user),
+  };
+}
+
+function transformTasks(tasks: PrismaTaskResult[]): TaskWithRelations[] {
+  return tasks.map(transformTask);
+}
 
 export class TaskService {
   // ============ TASK CRUD ============
@@ -57,7 +86,7 @@ export class TaskService {
       }),
     };
 
-    return prisma.task.findMany({
+    const tasks = await prisma.task.findMany({
       where: whereClause,
       include: {
         column: {
@@ -66,12 +95,28 @@ export class TaskService {
         createdBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
+        labels: {
+          select: {
+            label: {
+              select: { id: true, name: true, color: true },
+            },
+          },
+        },
+        assignees: {
+          select: {
+            user: {
+              select: { id: true, name: true, avatar: true },
+            },
+          },
+        },
         _count: {
           select: { assignees: true, attachments: true, comments: true },
         },
       },
       orderBy: [{ column: { order: 'asc' } }, { order: 'asc' }],
     });
+
+    return transformTasks(tasks as unknown as PrismaTaskResult[]);
   }
 
   /**
@@ -123,11 +168,25 @@ export class TaskService {
       }),
     };
 
-    return prisma.task.findMany({
+    const tasks = await prisma.task.findMany({
       where: whereClause,
       include: {
         createdBy: {
           select: { id: true, name: true, email: true, avatar: true },
+        },
+        labels: {
+          select: {
+            label: {
+              select: { id: true, name: true, color: true },
+            },
+          },
+        },
+        assignees: {
+          select: {
+            user: {
+              select: { id: true, name: true, avatar: true },
+            },
+          },
         },
         _count: {
           select: { assignees: true, attachments: true, comments: true },
@@ -135,6 +194,8 @@ export class TaskService {
       },
       orderBy: { order: 'asc' },
     });
+
+    return transformTasks(tasks as unknown as PrismaTaskResult[]);
   }
 
   /**
@@ -158,6 +219,20 @@ export class TaskService {
         createdBy: {
           select: { id: true, name: true, email: true, avatar: true },
         },
+        labels: {
+          select: {
+            label: {
+              select: { id: true, name: true, color: true },
+            },
+          },
+        },
+        assignees: {
+          select: {
+            user: {
+              select: { id: true, name: true, avatar: true },
+            },
+          },
+        },
         _count: {
           select: { assignees: true, attachments: true, comments: true },
         },
@@ -177,7 +252,7 @@ export class TaskService {
       return null;
     }
 
-    return task;
+    return transformTask(task as unknown as PrismaTaskResult);
   }
 
   /**
