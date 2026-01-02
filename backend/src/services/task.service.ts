@@ -8,6 +8,7 @@ import type {
 } from '../validators/task.validator.js';
 import { ColumnService } from './column.service.js';
 import { ProjectService } from './project.service.js';
+import { taskCache } from './cache.service.js';
 
 type TaskWithRelations = Task & {
   column?: {
@@ -62,6 +63,7 @@ export class TaskService {
 
   /**
    * Get all tasks for a project (across all columns)
+   * Results are cached for 30 seconds (no filters) or bypassed (with filters)
    */
   static async getProjectTasks(
     projectId: string,
@@ -74,49 +76,60 @@ export class TaskService {
       return null;
     }
 
-    const whereClause: Record<string, unknown> = {
-      column: { projectId },
-      ...(options.includeDeleted ? {} : { deletedAt: null }),
-      ...(options.priority && { priority: options.priority }),
-      ...(options.search && {
-        OR: [
-          { title: { contains: options.search, mode: 'insensitive' } },
-          { description: { contains: options.search, mode: 'insensitive' } },
-        ],
-      }),
+    const hasFilters = options.priority || options.search || options.includeDeleted;
+
+    const fetchTasks = async () => {
+      const whereClause: Record<string, unknown> = {
+        column: { projectId },
+        ...(options.includeDeleted ? {} : { deletedAt: null }),
+        ...(options.priority && { priority: options.priority }),
+        ...(options.search && {
+          OR: [
+            { title: { contains: options.search, mode: 'insensitive' } },
+            { description: { contains: options.search, mode: 'insensitive' } },
+          ],
+        }),
+      };
+
+      const tasks = await prisma.task.findMany({
+        where: whereClause,
+        include: {
+          column: {
+            select: { id: true, name: true, projectId: true },
+          },
+          createdBy: {
+            select: { id: true, name: true, email: true, avatar: true },
+          },
+          labels: {
+            select: {
+              label: {
+                select: { id: true, name: true, color: true },
+              },
+            },
+          },
+          assignees: {
+            select: {
+              user: {
+                select: { id: true, name: true, avatar: true },
+              },
+            },
+          },
+          _count: {
+            select: { assignees: true, attachments: true, comments: true },
+          },
+        },
+        orderBy: [{ column: { order: 'asc' } }, { order: 'asc' }],
+      });
+
+      return transformTasks(tasks as unknown as PrismaTaskResult[]);
     };
 
-    const tasks = await prisma.task.findMany({
-      where: whereClause,
-      include: {
-        column: {
-          select: { id: true, name: true, projectId: true },
-        },
-        createdBy: {
-          select: { id: true, name: true, email: true, avatar: true },
-        },
-        labels: {
-          select: {
-            label: {
-              select: { id: true, name: true, color: true },
-            },
-          },
-        },
-        assignees: {
-          select: {
-            user: {
-              select: { id: true, name: true, avatar: true },
-            },
-          },
-        },
-        _count: {
-          select: { assignees: true, attachments: true, comments: true },
-        },
-      },
-      orderBy: [{ column: { order: 'asc' } }, { order: 'asc' }],
-    });
+    // Only cache if no filters applied (default view)
+    if (hasFilters) {
+      return fetchTasks();
+    }
 
-    return transformTasks(tasks as unknown as PrismaTaskResult[]);
+    return taskCache.getProjectTasks(projectId, fetchTasks);
   }
 
   /**
@@ -331,6 +344,9 @@ export class TaskService {
       },
     });
 
+    // Invalidate project tasks cache
+    await taskCache.invalidateProjectTasks(column.projectId);
+
     return task;
   }
 
@@ -398,6 +414,9 @@ export class TaskService {
       },
     });
 
+    // Invalidate task and project caches
+    await taskCache.invalidateTask(taskId, task.column.projectId);
+
     return updatedTask;
   }
 
@@ -440,6 +459,9 @@ export class TaskService {
 
     // Reorder remaining tasks to close the gap
     await this.reorderTasksAfterDelete(task.columnId, task.order);
+
+    // Invalidate task and project caches
+    await taskCache.invalidateTask(taskId, task.column.projectId);
 
     return { success: true };
   }
@@ -552,6 +574,9 @@ export class TaskService {
         },
       });
     });
+
+    // Invalidate project tasks cache (task moved within project)
+    await taskCache.invalidateTask(taskId, task.column.projectId);
 
     return prisma.task.findUnique({
       where: { id: taskId },

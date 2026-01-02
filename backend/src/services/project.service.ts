@@ -1,6 +1,7 @@
 import { prisma } from '../config/database.js';
 import type { Project, ProjectMember, Role, Column } from '@prisma/client';
 import type { CreateProjectInput, UpdateProjectInput, AddMemberInput } from '../validators/project.validator.js';
+import { projectCache } from './cache.service.js';
 
 // Default columns for new projects
 const DEFAULT_COLUMNS = [
@@ -25,81 +26,85 @@ export class ProjectService {
 
   /**
    * Get all projects for a user (owned + member)
+   * Results are cached for 60 seconds
    */
   static async getUserProjects(userId: string): Promise<ProjectWithRelations[]> {
-    return prisma.project.findMany({
-      where: {
-        deletedAt: null,
-        OR: [
-          { ownerId: userId },
-          { members: { some: { userId } } },
-        ],
-      },
-      include: {
-        _count: {
-          select: {
-            members: true,
-          },
+    return projectCache.getUserProjects(userId, () =>
+      prisma.project.findMany({
+        where: {
+          deletedAt: null,
+          OR: [{ ownerId: userId }, { members: { some: { userId } } }],
         },
-        members: {
-          take: 5,
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
+        include: {
+          _count: {
+            select: {
+              members: true,
+            },
+          },
+          members: {
+            take: 5,
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: true,
+                },
               },
             },
           },
         },
-      },
-      orderBy: { updatedAt: 'desc' },
-    });
+        orderBy: { updatedAt: 'desc' },
+      })
+    );
   }
 
   /**
    * Get a single project by ID
+   * Results are cached for 2 minutes
    */
   static async getProjectById(
     projectId: string,
     userId: string
   ): Promise<ProjectWithRelations | null> {
-    const project = await prisma.project.findFirst({
-      where: {
-        id: projectId,
-        deletedAt: null,
-        OR: [
-          { ownerId: userId },
-          { members: { some: { userId } } },
-        ],
-      },
-      include: {
-        columns: {
-          orderBy: { order: 'asc' },
+    // First check access (cached)
+    const hasAccess = await this.checkProjectAccess(projectId, userId);
+    if (!hasAccess) {
+      return null;
+    }
+
+    // Then get project data (cached)
+    return projectCache.getProject(projectId, () =>
+      prisma.project.findFirst({
+        where: {
+          id: projectId,
+          deletedAt: null,
         },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
+        include: {
+          columns: {
+            orderBy: { order: 'asc' },
+          },
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: true,
+                },
               },
             },
           },
-        },
-        _count: {
-          select: {
-            members: true,
+          _count: {
+            select: {
+              members: true,
+            },
           },
         },
-      },
-    });
-
-    return project;
+      })
+    );
   }
 
   /**
@@ -147,6 +152,9 @@ export class ProjectService {
       },
     });
 
+    // Invalidate user's project list cache
+    await projectCache.invalidateUserProjects(userId);
+
     return project;
   }
 
@@ -191,6 +199,9 @@ export class ProjectService {
       },
     });
 
+    // Invalidate project cache and user project lists for all members
+    await projectCache.invalidateProject(projectId);
+
     return project;
   }
 
@@ -205,6 +216,9 @@ export class ProjectService {
         ownerId: userId,
         deletedAt: null,
       },
+      include: {
+        members: { select: { userId: true } },
+      },
     });
 
     if (!project) {
@@ -216,6 +230,13 @@ export class ProjectService {
       data: { deletedAt: new Date() },
     });
 
+    // Invalidate all related caches
+    await projectCache.invalidateProject(projectId);
+    // Invalidate project lists for all members
+    for (const member of project.members) {
+      await projectCache.invalidateUserProjects(member.userId);
+    }
+
     return true;
   }
 
@@ -223,6 +244,7 @@ export class ProjectService {
 
   /**
    * Get project members
+   * Results are cached for 5 minutes
    */
   static async getProjectMembers(
     projectId: string,
@@ -234,23 +256,22 @@ export class ProjectService {
       return null;
     }
 
-    return prisma.projectMember.findMany({
-      where: { projectId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
+    return projectCache.getMembers(projectId, () =>
+      prisma.projectMember.findMany({
+        where: { projectId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            },
           },
         },
-      },
-      orderBy: [
-        { role: 'asc' },
-        { joinedAt: 'asc' },
-      ],
-    });
+        orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
+      })
+    );
   }
 
   /**
@@ -291,7 +312,7 @@ export class ProjectService {
     }
 
     // Add member
-    return prisma.projectMember.create({
+    const member = await prisma.projectMember.create({
       data: {
         projectId,
         userId: userToAdd.id,
@@ -308,6 +329,11 @@ export class ProjectService {
         },
       },
     });
+
+    // Invalidate membership caches
+    await projectCache.invalidateMembership(projectId, userToAdd.id);
+
+    return member;
   }
 
   /**
@@ -342,7 +368,7 @@ export class ProjectService {
       throw new Error('Cannot assign OWNER role');
     }
 
-    return prisma.projectMember.update({
+    const updatedMember = await prisma.projectMember.update({
       where: {
         projectId_userId: {
           projectId,
@@ -361,6 +387,11 @@ export class ProjectService {
         },
       },
     });
+
+    // Invalidate membership caches
+    await projectCache.invalidateMembership(projectId, targetUserId);
+
+    return updatedMember;
   }
 
   /**
@@ -403,6 +434,9 @@ export class ProjectService {
       },
     });
 
+    // Invalidate membership caches
+    await projectCache.invalidateMembership(projectId, targetUserId);
+
     return true;
   }
 
@@ -410,37 +444,41 @@ export class ProjectService {
 
   /**
    * Check if user has access to project with optional role requirement
+   * Basic access check is cached for 5 minutes
    */
   static async checkProjectAccess(
     projectId: string,
     userId: string,
     requiredRoles?: Role[]
   ): Promise<boolean> {
-    const member = await prisma.projectMember.findUnique({
-      where: {
-        projectId_userId: {
-          projectId,
-          userId,
-        },
-      },
-      include: {
-        project: {
-          select: {
-            deletedAt: true,
+    // For role-specific checks, we can't use the simple boolean cache
+    // We need the actual role to check against requiredRoles
+    if (requiredRoles) {
+      const role = await this.getUserRole(projectId, userId);
+      if (!role) return false;
+      return requiredRoles.includes(role);
+    }
+
+    // For simple access checks, use cached result
+    return projectCache.checkAccess(projectId, userId, async () => {
+      const member = await prisma.projectMember.findUnique({
+        where: {
+          projectId_userId: {
+            projectId,
+            userId,
           },
         },
-      },
+        include: {
+          project: {
+            select: {
+              deletedAt: true,
+            },
+          },
+        },
+      });
+
+      return !!(member && !member.project.deletedAt);
     });
-
-    if (!member || member.project.deletedAt) {
-      return false;
-    }
-
-    if (requiredRoles && !requiredRoles.includes(member.role)) {
-      return false;
-    }
-
-    return true;
   }
 
   /**
