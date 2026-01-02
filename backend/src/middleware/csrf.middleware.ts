@@ -23,10 +23,11 @@ const CSRF_HEADER_NAME = 'x-csrf-token';
 const CSRF_TOKEN_LENGTH = 32;
 
 // Cookie options for CSRF token
+// Use 'none' for cross-origin (Vercel frontend + Render backend)
 const CSRF_COOKIE_OPTIONS = {
   httpOnly: false, // Must be readable by JavaScript
   secure: env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: (env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
   maxAge: 24 * 60 * 60 * 1000, // 24 hours
   path: '/',
 };

@@ -14,10 +14,12 @@ import type {
 const OAUTH_CODE_TTL = 60;
 
 // Cookie options
+// Use 'none' for cross-origin (Vercel frontend + Render backend)
+// 'none' requires secure: true
 const REFRESH_TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  sameSite: (env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   path: '/',
 };
@@ -106,7 +108,7 @@ export class AuthController {
       res.clearCookie('refreshToken', {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
         path: '/',
       });
 
@@ -143,7 +145,7 @@ export class AuthController {
         res.clearCookie('refreshToken', {
           httpOnly: true,
           secure: env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
           path: '/',
         });
 

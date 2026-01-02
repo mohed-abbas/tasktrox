@@ -10,6 +10,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from '../validators/auth.validator.js';
+import { env } from '../config/env.js';
 
 const router = Router();
 
@@ -121,10 +122,11 @@ if (process.env.NODE_ENV === 'development') {
       );
 
       // Set refresh token cookie
+      // Use 'none' for cross-origin (Vercel frontend + Render backend)
       res.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
+        secure: env.NODE_ENV === 'production',
+        sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
       });
