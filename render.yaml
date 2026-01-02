@@ -1,0 +1,81 @@
+# ===========================================
+# TASKTROX - RENDER.COM DEPLOYMENT BLUEPRINT
+# ===========================================
+# Documentation: https://render.com/docs/blueprint-spec
+#
+# Usage:
+#   1. Push this file to your repository
+#   2. Go to Render Dashboard > New > Blueprint
+#   3. Connect your GitHub repo
+#   4. Render will auto-detect this file
+#   5. Fill in environment variables marked as "sync: false"
+
+services:
+  # ----- Backend API Service -----
+  - type: web
+    name: tasktrox-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: frankfurt  # EU region - closest to Neon (eu-central-1)
+    plan: free
+    branch: main
+    healthCheckPath: /api/v1/health
+
+    # Environment Variables
+    envVars:
+      # Core
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+
+      # Database (Neon PostgreSQL)
+      # Set this manually in Render dashboard
+      - key: DATABASE_URL
+        sync: false
+
+      # Cache (Upstash Redis)
+      # Set this manually in Render dashboard
+      - key: REDIS_URL
+        sync: false
+
+      # JWT Authentication
+      # Generate with: openssl rand -base64 48
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+
+      # CORS & URLs
+      # Set to your Vercel frontend URL after deploying
+      - key: CORS_ORIGIN
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: API_URL
+        sync: false
+
+      # Rate Limiting
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "100"
+      - key: AUTH_RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: AUTH_RATE_LIMIT_MAX_REQUESTS
+        value: "5"
+
+      # OAuth (Optional - set if using social login)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false
