@@ -16,7 +16,8 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci
+# Using npm install since backend is part of a monorepo workspace
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -41,7 +42,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 # Copy only production dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
