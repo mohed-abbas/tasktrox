@@ -112,7 +112,7 @@ export function RecentActivity({ activities, isLoading, className }: RecentActiv
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex items-start gap-3 animate-pulse">
                 <div className="h-4 w-4 rounded-full bg-muted" />

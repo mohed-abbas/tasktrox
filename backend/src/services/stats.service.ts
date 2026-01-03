@@ -282,7 +282,7 @@ export class StatsService {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 10,
+      take: 5,
     });
 
     return activities.map((activity) => ({
