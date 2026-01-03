@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { AssigneeService } from '../services/assignee.service.js';
+import { ActivityService, ActivityAction } from '../services/activity.service.js';
 import type {
   AddAssigneeInput,
   SetAssigneesInput,
@@ -71,6 +72,17 @@ export class AssigneeController {
         return;
       }
 
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.ASSIGNEE_ADDED,
+        projectId,
+        userId: requesterId,
+        taskId,
+        metadata: {
+          assigneeId: targetUserId,
+        },
+      });
+
       res.status(201).json({
         success: true,
         data: { assignee },
@@ -118,6 +130,17 @@ export class AssigneeController {
         });
         return;
       }
+
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.ASSIGNEE_REMOVED,
+        projectId,
+        userId: requesterId,
+        taskId,
+        metadata: {
+          assigneeId: targetUserId,
+        },
+      });
 
       res.json({
         success: true,

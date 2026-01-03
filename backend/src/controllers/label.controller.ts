@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { LabelService } from '../services/label.service.js';
+import { ActivityService, ActivityAction } from '../services/activity.service.js';
 import type {
   CreateLabelInput,
   UpdateLabelInput,
@@ -96,6 +97,18 @@ export class LabelController {
         return;
       }
 
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.LABEL_CREATED,
+        projectId,
+        userId,
+        metadata: {
+          labelId: label.id,
+          labelName: label.name,
+          labelColor: label.color,
+        },
+      });
+
       res.status(201).json({
         success: true,
         data: { label },
@@ -139,6 +152,22 @@ export class LabelController {
         return;
       }
 
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.LABEL_UPDATED,
+        projectId,
+        userId,
+        metadata: {
+          labelId: label.id,
+          labelName: label.name,
+          labelColor: label.color,
+          changes: Object.keys(data).reduce((acc, key) => {
+            acc[key] = { to: data[key as keyof typeof data] };
+            return acc;
+          }, {} as Record<string, { to: unknown }>),
+        },
+      });
+
       res.json({
         success: true,
         data: { label },
@@ -168,6 +197,9 @@ export class LabelController {
       const projectId = req.params.projectId as string;
       const labelId = req.params.labelId as string;
 
+      // Get label info before deletion for logging
+      const labelInfo = await LabelService.getLabelById(projectId, labelId, userId);
+
       const result = await LabelService.deleteLabel(projectId, labelId, userId);
 
       if (!result.success) {
@@ -184,6 +216,18 @@ export class LabelController {
         });
         return;
       }
+
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.LABEL_DELETED,
+        projectId,
+        userId,
+        metadata: {
+          labelId,
+          labelName: labelInfo?.name,
+          labelColor: labelInfo?.color,
+        },
+      });
 
       res.json({
         success: true,
@@ -207,6 +251,9 @@ export class LabelController {
       const taskId = req.params.taskId as string;
       const { labelId } = req.body as AddTaskLabelInput;
 
+      // Get label info before operation for activity logging
+      const labelInfo = await LabelService.getLabelById(projectId, labelId, userId);
+
       const taskLabel = await LabelService.addLabelToTask(
         projectId,
         taskId,
@@ -224,6 +271,19 @@ export class LabelController {
         });
         return;
       }
+
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.LABEL_ADDED,
+        projectId,
+        userId,
+        taskId,
+        metadata: {
+          labelId,
+          labelName: labelInfo?.name,
+          labelColor: labelInfo?.color,
+        },
+      });
 
       res.status(201).json({
         success: true,
@@ -261,6 +321,9 @@ export class LabelController {
       const taskId = req.params.taskId as string;
       const labelId = req.params.labelId as string;
 
+      // Get label info before removal for logging
+      const labelInfo = await LabelService.getLabelById(projectId, labelId, userId);
+
       const result = await LabelService.removeLabelFromTask(
         projectId,
         taskId,
@@ -279,6 +342,19 @@ export class LabelController {
         });
         return;
       }
+
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.LABEL_REMOVED,
+        projectId,
+        userId,
+        taskId,
+        metadata: {
+          labelId,
+          labelName: labelInfo?.name,
+          labelColor: labelInfo?.color,
+        },
+      });
 
       res.json({
         success: true,

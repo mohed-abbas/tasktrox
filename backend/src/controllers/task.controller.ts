@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { TaskService } from '../services/task.service.js';
+import { ActivityService, ActivityAction } from '../services/activity.service.js';
 import type {
   CreateTaskInput,
   UpdateTaskInput,
@@ -107,6 +108,18 @@ export class TaskController {
       // Broadcast to project room
       if (task.column?.projectId) {
         broadcastTaskCreated(task.column.projectId, toSerializableTask(task), userId);
+
+        // Log activity asynchronously
+        ActivityService.logAsync({
+          action: ActivityAction.TASK_CREATED,
+          projectId: task.column.projectId,
+          userId,
+          taskId: task.id,
+          metadata: {
+            taskTitle: task.title,
+            columnName: task.column.name,
+          },
+        });
       }
 
       res.status(201).json({
@@ -213,6 +226,18 @@ export class TaskController {
       // Broadcast to project room
       if (task.column?.projectId) {
         broadcastTaskCreated(task.column.projectId, toSerializableTask(task), userId);
+
+        // Log activity asynchronously
+        ActivityService.logAsync({
+          action: ActivityAction.TASK_CREATED,
+          projectId: task.column.projectId,
+          userId,
+          taskId: task.id,
+          metadata: {
+            taskTitle: task.title,
+            columnName: task.column.name,
+          },
+        });
       }
 
       res.status(201).json({
@@ -250,6 +275,21 @@ export class TaskController {
       // Broadcast to project room
       if (task.column?.projectId) {
         broadcastTaskUpdated(task.column.projectId, toSerializableTask(task), userId);
+
+        // Log activity asynchronously with changes
+        ActivityService.logAsync({
+          action: ActivityAction.TASK_UPDATED,
+          projectId: task.column.projectId,
+          userId,
+          taskId: task.id,
+          metadata: {
+            taskTitle: task.title,
+            changes: Object.keys(data).reduce((acc, key) => {
+              acc[key] = { to: data[key as keyof typeof data] };
+              return acc;
+            }, {} as Record<string, { to: unknown }>),
+          },
+        });
       }
 
       res.json({
@@ -295,6 +335,17 @@ export class TaskController {
       // Broadcast to project room
       if (projectId && columnId) {
         broadcastTaskDeleted(projectId, taskId, columnId, userId);
+
+        // Log activity asynchronously
+        ActivityService.logAsync({
+          action: ActivityAction.TASK_DELETED,
+          projectId,
+          userId,
+          taskId,
+          metadata: {
+            taskTitle: taskInfo?.title,
+          },
+        });
       }
 
       res.json({
@@ -383,6 +434,20 @@ export class TaskController {
             },
             userId
           );
+
+          // Log activity asynchronously
+          ActivityService.logAsync({
+            action: ActivityAction.TASK_MOVED,
+            projectId: task.column.projectId,
+            userId,
+            taskId: task.id,
+            metadata: {
+              taskTitle: task.title,
+              fromColumn: originalTask?.column?.name,
+              toColumn: task.column.name,
+              toOrder: task.order,
+            },
+          });
         } else {
           // Task reordered within same column
           broadcastTaskReordered(
@@ -394,6 +459,20 @@ export class TaskController {
             },
             userId
           );
+
+          // Log activity asynchronously
+          ActivityService.logAsync({
+            action: ActivityAction.TASK_REORDERED,
+            projectId: task.column.projectId,
+            userId,
+            taskId: task.id,
+            metadata: {
+              taskTitle: task.title,
+              columnName: task.column.name,
+              fromOrder: originalTask?.order,
+              toOrder: task.order,
+            },
+          });
         }
       }
 
@@ -440,6 +519,19 @@ export class TaskController {
           },
           userId
         );
+
+        // Log activity asynchronously
+        ActivityService.logAsync({
+          action: ActivityAction.TASK_REORDERED,
+          projectId: task.column.projectId,
+          userId,
+          taskId: task.id,
+          metadata: {
+            taskTitle: task.title,
+            columnName: task.column.name,
+            toOrder: task.order,
+          },
+        });
       }
 
       res.json({

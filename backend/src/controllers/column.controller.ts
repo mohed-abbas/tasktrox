@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ColumnService } from '../services/column.service.js';
+import { ActivityService, ActivityAction } from '../services/activity.service.js';
 import type {
   CreateColumnInput,
   UpdateColumnInput,
@@ -118,6 +119,17 @@ export class ColumnController {
       // Broadcast to project room
       broadcastColumnCreated(projectId, toSerializableColumn(column), userId);
 
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.COLUMN_CREATED,
+        projectId,
+        userId,
+        metadata: {
+          columnId: column.id,
+          columnName: column.name,
+        },
+      });
+
       res.status(201).json({
         success: true,
         data: { column },
@@ -152,6 +164,21 @@ export class ColumnController {
 
       // Broadcast to project room
       broadcastColumnUpdated(column.projectId, toSerializableColumn(column), userId);
+
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.COLUMN_UPDATED,
+        projectId: column.projectId,
+        userId,
+        metadata: {
+          columnId: column.id,
+          columnName: column.name,
+          changes: Object.keys(data).reduce((acc, key) => {
+            acc[key] = { to: data[key as keyof typeof data] };
+            return acc;
+          }, {} as Record<string, { to: unknown }>),
+        },
+      });
 
       res.json({
         success: true,
@@ -200,6 +227,17 @@ export class ColumnController {
       // Broadcast to project room
       if (projectId) {
         broadcastColumnDeleted(projectId, columnId, userId);
+
+        // Log activity asynchronously
+        ActivityService.logAsync({
+          action: ActivityAction.COLUMN_DELETED,
+          projectId,
+          userId,
+          metadata: {
+            columnId,
+            columnName: columnInfo?.name,
+          },
+        });
       }
 
       res.json({
@@ -244,6 +282,18 @@ export class ColumnController {
         userId
       );
 
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.COLUMN_REORDERED,
+        projectId: column.projectId,
+        userId,
+        metadata: {
+          columnId: column.id,
+          columnName: column.name,
+          toOrder: column.order,
+        },
+      });
+
       res.json({
         success: true,
         data: { column },
@@ -285,6 +335,18 @@ export class ColumnController {
         },
         userId
       );
+
+      // Log activity asynchronously
+      ActivityService.logAsync({
+        action: ActivityAction.COLUMN_REORDERED,
+        projectId: column.projectId,
+        userId,
+        metadata: {
+          columnId: column.id,
+          columnName: column.name,
+          toOrder: column.order,
+        },
+      });
 
       res.json({
         success: true,

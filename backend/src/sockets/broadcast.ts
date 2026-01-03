@@ -10,6 +10,7 @@ import { getIO } from './index.js';
 import type {
   LiveTask,
   LiveColumn,
+  LiveActivity,
   LiveUpdateMeta,
   TaskMovedPayload,
   TaskReorderedPayload,
@@ -279,6 +280,36 @@ export function broadcastColumnReordered(
     socketLogger.error(
       { error, ...payload },
       'Failed to broadcast column:reordered'
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Activity Broadcast Functions
+// -----------------------------------------------------------------------------
+
+/**
+ * Broadcast when an activity is logged.
+ */
+export function broadcastActivityLogged(
+  projectId: string,
+  activity: LiveActivity,
+  userId: string
+): void {
+  try {
+    const io = getIO();
+    io.to(getProjectRoom(projectId)).emit('activity:logged', {
+      activity,
+      meta: createMeta(userId),
+    });
+    socketLogger.debug(
+      { projectId, activityId: activity.id, userId },
+      'Broadcast activity:logged'
+    );
+  } catch (error) {
+    socketLogger.error(
+      { error, projectId, activityId: activity.id },
+      'Failed to broadcast activity:logged'
     );
   }
 }

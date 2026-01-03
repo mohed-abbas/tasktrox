@@ -223,6 +223,16 @@ export interface ServerToClientEvents {
    * @param data - Column reorder details with metadata
    */
   'column:reordered': (data: ColumnReorderedPayload & { meta: LiveUpdateMeta }) => void;
+
+  // -------------------------------------------------------------------------
+  // Activity Live Update Events
+  // -------------------------------------------------------------------------
+
+  /**
+   * Broadcast when a new activity is logged.
+   * @param data - The activity data with metadata
+   */
+  'activity:logged': (data: { activity: LiveActivity; meta: LiveUpdateMeta }) => void;
 }
 
 /**
@@ -288,6 +298,29 @@ export interface LiveColumn {
   projectId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * Activity data broadcast for live updates.
+ * Matches the shape returned by ActivityService methods.
+ */
+export interface LiveActivity {
+  id: string;
+  action: string;
+  metadata: Record<string, unknown> | null;
+  projectId: string;
+  taskId: string | null;
+  userId: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
+  task?: {
+    id: string;
+    title: string;
+  } | null;
 }
 
 /**
