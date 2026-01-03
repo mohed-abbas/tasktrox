@@ -75,10 +75,19 @@ router.get(
 // GET /auth/google/callback - Google OAuth callback
 router.get(
   '/google/callback',
-  passport.authenticate('google', {
-    session: false,
-    failureRedirect: '/auth/login?error=oauth_failed',
-  }),
+  (req, res, next) => {
+    passport.authenticate('google', {
+      session: false,
+    }, (err: Error | null, user: Express.User | false) => {
+      if (err || !user) {
+        // Redirect to frontend error page on authentication failure
+        return res.redirect(`${env.FRONTEND_URL}/auth/error?message=${encodeURIComponent(err?.message || 'Authentication failed')}`);
+      }
+      // Attach user to request for the callback handler
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   async (req, res, next) => {
     const handler = AuthController.oauthCallback(req, res, next);
     await handler();

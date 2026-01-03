@@ -54,7 +54,9 @@ const envSchema = z.object({
   // OAuth - Google (optional)
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
-  GOOGLE_CALLBACK_URL: z.string().default('/api/v1/auth/google/callback'),
+  // Note: In production, set this to the full URL (e.g., https://api.yourapp.com/api/v1/auth/google/callback)
+  // The URL must match exactly what's registered in Google Cloud Console
+  GOOGLE_CALLBACK_URL: z.string().optional(),
 
   // OAuth - Apple (optional)
   APPLE_CLIENT_ID: z.string().optional(),

@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import * as authApi from '@/lib/api/auth';
 
 function CallbackContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -17,12 +16,12 @@ function CallbackContent() {
       const error = searchParams.get('error');
 
       if (error) {
-        router.push(`/login?error=${encodeURIComponent(error)}`);
+        window.location.href = `/login?error=${encodeURIComponent(error)}`;
         return;
       }
 
       if (!code) {
-        router.push('/login?error=no_code');
+        window.location.href = '/login?error=no_code';
         return;
       }
 
@@ -30,9 +29,12 @@ function CallbackContent() {
         // Exchange the authorization code for tokens via secure POST request
         const { accessToken } = await authApi.exchangeOAuthCode(code);
 
-        // Store token and redirect
+        // Store token
         localStorage.setItem('tasktrox_access_token', accessToken);
-        router.push('/dashboard');
+
+        // Use full page navigation to ensure AuthProvider re-initializes
+        // This avoids race condition where AuthProvider already checked for token
+        window.location.href = '/dashboard';
       } catch (err) {
         console.error('OAuth code exchange failed:', err);
         setStatus('error');
@@ -40,13 +42,13 @@ function CallbackContent() {
 
         // Redirect to login after a short delay
         setTimeout(() => {
-          router.push('/login?error=oauth_exchange_failed');
+          window.location.href = '/login?error=oauth_exchange_failed';
         }, 2000);
       }
     };
 
     handleCallback();
-  }, [router, searchParams]);
+  }, [searchParams]);
 
   if (status === 'error') {
     return (

@@ -252,7 +252,8 @@ export class AuthController {
         await redis.setex(`oauth_code:${authCode}`, OAUTH_CODE_TTL, user.id);
 
         // Redirect to frontend with authorization code (not the token)
-        res.redirect(`${env.FRONTEND_URL}/auth/callback?code=${authCode}`);
+        // Note: Frontend callback page is at /(auth)/callback which maps to /callback URL
+        res.redirect(`${env.FRONTEND_URL}/callback?code=${authCode}`);
       } catch (error) {
         next(error);
       }

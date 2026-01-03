@@ -14,6 +14,12 @@ import healthRoutes from './routes/health.routes.js';
 
 const app: Application = express();
 
+// Trust proxy - required when behind reverse proxy (Render, Heroku, etc.)
+// This enables express-rate-limit to correctly read client IP from X-Forwarded-For
+if (env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // Security middleware
 app.use(helmet());
 app.use(

@@ -81,12 +81,16 @@ passport.use(
 
 // Google OAuth Strategy (only enabled if credentials are configured)
 if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
+  // Construct callback URL: use explicit GOOGLE_CALLBACK_URL or derive from API_URL
+  const googleCallbackUrl =
+    env.GOOGLE_CALLBACK_URL || `${env.API_URL}/api/v1/auth/google/callback`;
+
   passport.use(
     new GoogleStrategy(
       {
         clientID: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
-        callbackURL: env.GOOGLE_CALLBACK_URL,
+        callbackURL: googleCallbackUrl,
       },
       async (_accessToken, _refreshToken, profile: GoogleProfile, done) => {
         try {
