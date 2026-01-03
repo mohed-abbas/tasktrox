@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useMemo, useCallback } from 'react';
+import { use, useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useColumns, useTasks, useTask, useLabels, useViewPreference, useProjectMembers, useAuth, useFilters, type ViewMode } from '@/hooks';
 import { setTaskLabels } from '@/lib/api/labels';
 import { FilterPanel } from '@/components/filter';
+import { useSocket } from '@/providers/SocketProvider';
 
 interface ProjectPageProps {
   params: Promise<{ projectId: string }>;
@@ -23,6 +24,22 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   const { projectId } = use(params);
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  // Socket connection for real-time updates
+  const { joinProject, leaveProject, isConnected } = useSocket();
+
+  // Join project room for real-time updates
+  useEffect(() => {
+    if (isConnected && projectId) {
+      joinProject(projectId);
+    }
+
+    return () => {
+      if (isConnected && projectId) {
+        leaveProject(projectId);
+      }
+    };
+  }, [projectId, isConnected, joinProject, leaveProject]);
 
   // View preference with localStorage persistence
   const { viewMode, setViewMode } = useViewPreference({ projectId });

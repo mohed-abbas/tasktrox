@@ -17,6 +17,8 @@ import { SaveIndicator } from './SaveIndicator';
 import { LabelSelector, LabelBadge } from '@/components/labels';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useAssignees } from '@/hooks/useAssignees';
+import { usePresence } from '@/hooks/usePresence';
+import { PresenceIndicator } from '@/components/presence/PresenceIndicator';
 import type { Task } from '@/lib/api/tasks';
 import type { Label } from '@/lib/api/labels';
 
@@ -138,6 +140,21 @@ export function TaskDetailModal({
     projectId: projectId || '',
     taskId: task?.id,
     enabled: open && !!projectId && !!task?.id,
+  });
+
+  // Presence hooks for real-time editing indicators
+  const titlePresence = usePresence({
+    projectId: projectId || '',
+    taskId: task?.id || '',
+    field: 'title',
+    enabled: open && !!projectId && !!task?.id && !readOnly,
+  });
+
+  const descriptionPresence = usePresence({
+    projectId: projectId || '',
+    taskId: task?.id || '',
+    field: 'description',
+    enabled: open && !!projectId && !!task?.id && !readOnly,
   });
 
   // Original data for comparison (memoized to avoid unnecessary re-renders)
@@ -327,24 +344,44 @@ export function TaskDetailModal({
                   className="flex items-start justify-between p-6 pb-0 sticky top-0 bg-white z-10"
                 >
                   <div className="flex-1 pr-4">
-                    {/* Editable Title */}
-                    <input
-                      id="task-modal-title"
-                      type="text"
-                      value={editableData.title}
-                      onChange={(e) => handleTitleChange(e.target.value)}
-                      onKeyDown={handleTitleKeyDown}
-                      disabled={readOnly}
-                      className={cn(
-                        'w-full text-xl font-semibold text-gray-900',
-                        'bg-transparent border-0 outline-none',
-                        'focus:ring-0 p-0',
-                        'placeholder:text-gray-400',
-                        readOnly && 'cursor-default'
-                      )}
-                      placeholder="Task title..."
-                      autoFocus={!readOnly}
-                    />
+                    {/* Editable Title with Presence */}
+                    <div className="relative">
+                      <input
+                        id="task-modal-title"
+                        type="text"
+                        value={editableData.title}
+                        onChange={(e) => handleTitleChange(e.target.value)}
+                        onKeyDown={handleTitleKeyDown}
+                        onFocus={titlePresence.startEditing}
+                        onBlur={(e) => {
+                          // Stop presence tracking
+                          titlePresence.stopEditing();
+                          // Handle escape key reset behavior from handleTitleKeyDown
+                          // (blur is also triggered by Enter key in handleTitleKeyDown)
+                        }}
+                        disabled={readOnly}
+                        className={cn(
+                          'w-full text-xl font-semibold text-gray-900',
+                          'bg-transparent border-0 outline-none',
+                          'focus:ring-0 p-0 pr-8',
+                          'placeholder:text-gray-400',
+                          readOnly && 'cursor-default'
+                        )}
+                        placeholder="Task title..."
+                        autoFocus={!readOnly}
+                      />
+                      {/* Presence indicator for title */}
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                        <PresenceIndicator
+                          user={titlePresence.editingUser ? {
+                            id: titlePresence.editingUser.id,
+                            name: titlePresence.editingUser.name,
+                            avatar: titlePresence.editingUser.avatar ?? null,
+                          } : null}
+                          size="sm"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Save Indicator + Actions */}
@@ -427,20 +464,35 @@ export function TaskDetailModal({
                     <label className="text-sm font-medium text-gray-700">
                       Description
                     </label>
-                    <textarea
-                      value={editableData.description || ''}
-                      onChange={(e) => handleDescriptionChange(e.target.value)}
-                      placeholder={readOnly ? 'No description' : 'Add a description...'}
-                      rows={4}
-                      disabled={readOnly}
-                      className={cn(
-                        'w-full px-3 py-2 rounded-lg border border-gray-200',
-                        'text-sm text-gray-700 placeholder:text-gray-400',
-                        'focus:border-gray-400 focus:ring-2 focus:ring-gray-800/10',
-                        'outline-none transition-colors resize-none',
-                        readOnly && 'bg-gray-50 cursor-default'
-                      )}
-                    />
+                    <div className="relative">
+                      <textarea
+                        value={editableData.description || ''}
+                        onChange={(e) => handleDescriptionChange(e.target.value)}
+                        onFocus={descriptionPresence.startEditing}
+                        onBlur={descriptionPresence.stopEditing}
+                        placeholder={readOnly ? 'No description' : 'Add a description...'}
+                        rows={4}
+                        disabled={readOnly}
+                        className={cn(
+                          'w-full px-3 py-2 rounded-lg border border-gray-200',
+                          'text-sm text-gray-700 placeholder:text-gray-400',
+                          'focus:border-gray-400 focus:ring-2 focus:ring-gray-800/10',
+                          'outline-none transition-colors resize-none',
+                          readOnly && 'bg-gray-50 cursor-default'
+                        )}
+                      />
+                      {/* Presence indicator for description */}
+                      <div className="absolute right-2 top-2">
+                        <PresenceIndicator
+                          user={descriptionPresence.editingUser ? {
+                            id: descriptionPresence.editingUser.id,
+                            name: descriptionPresence.editingUser.name,
+                            avatar: descriptionPresence.editingUser.avatar ?? null,
+                          } : null}
+                          size="sm"
+                        />
+                      </div>
+                    </div>
                   </motion.div>
 
                   {/* Labels Section */}

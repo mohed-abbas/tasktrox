@@ -8,6 +8,28 @@ import type {
   BulkDeleteInput,
   ListTasksQuery,
 } from '../validators/task.validator.js';
+import {
+  broadcastTaskCreated,
+  broadcastTaskUpdated,
+  broadcastTaskDeleted,
+  broadcastTaskMoved,
+  broadcastTaskReordered,
+} from '../sockets/broadcast.js';
+import type { LiveTask } from '../types/presence.js';
+
+/**
+ * Convert a task from the service to LiveTask format for broadcasting.
+ * Serializes Date objects to ISO strings.
+ */
+function toSerializableTask(task: Record<string, unknown>): LiveTask {
+  return {
+    ...task,
+    dueDate: task.dueDate ? (task.dueDate as Date).toISOString() : null,
+    createdAt: (task.createdAt as Date).toISOString(),
+    updatedAt: (task.updatedAt as Date).toISOString(),
+    deletedAt: task.deletedAt ? (task.deletedAt as Date).toISOString() : null,
+  } as LiveTask;
+}
 
 export class TaskController {
   // ============ PROJECT-SCOPED TASK ROUTES ============
@@ -80,6 +102,11 @@ export class TaskController {
           },
         });
         return;
+      }
+
+      // Broadcast to project room
+      if (task.column?.projectId) {
+        broadcastTaskCreated(task.column.projectId, toSerializableTask(task), userId);
       }
 
       res.status(201).json({
@@ -183,6 +210,11 @@ export class TaskController {
         return;
       }
 
+      // Broadcast to project room
+      if (task.column?.projectId) {
+        broadcastTaskCreated(task.column.projectId, toSerializableTask(task), userId);
+      }
+
       res.status(201).json({
         success: true,
         data: { task },
@@ -215,6 +247,11 @@ export class TaskController {
         return;
       }
 
+      // Broadcast to project room
+      if (task.column?.projectId) {
+        broadcastTaskUpdated(task.column.projectId, toSerializableTask(task), userId);
+      }
+
       res.json({
         success: true,
         data: { task },
@@ -233,6 +270,11 @@ export class TaskController {
       const userId = req.user!.id;
       const taskId = req.params.taskId as string;
 
+      // Get task info before deletion for broadcasting
+      const taskInfo = await TaskService.getTaskById(taskId, userId);
+      const projectId = taskInfo?.column?.projectId;
+      const columnId = taskInfo?.columnId;
+
       const result = await TaskService.deleteTask(taskId, userId);
 
       if (!result.success) {
@@ -248,6 +290,11 @@ export class TaskController {
           },
         });
         return;
+      }
+
+      // Broadcast to project room
+      if (projectId && columnId) {
+        broadcastTaskDeleted(projectId, taskId, columnId, userId);
       }
 
       res.json({
@@ -304,6 +351,10 @@ export class TaskController {
       const taskId = req.params.taskId as string;
       const data = req.body as MoveTaskInput;
 
+      // Get original task info before move
+      const originalTask = await TaskService.getTaskById(taskId, userId);
+      const fromColumnId = originalTask?.columnId;
+
       const task = await TaskService.moveTask(taskId, userId, data);
 
       if (!task) {
@@ -316,6 +367,34 @@ export class TaskController {
           },
         });
         return;
+      }
+
+      // Broadcast to project room
+      if (task.column?.projectId && fromColumnId) {
+        if (fromColumnId !== data.targetColumnId) {
+          // Task moved to different column
+          broadcastTaskMoved(
+            {
+              taskId,
+              fromColumnId,
+              toColumnId: data.targetColumnId,
+              order: task.order,
+              projectId: task.column.projectId,
+            },
+            userId
+          );
+        } else {
+          // Task reordered within same column
+          broadcastTaskReordered(
+            {
+              taskId,
+              columnId: task.columnId,
+              order: task.order,
+              projectId: task.column.projectId,
+            },
+            userId
+          );
+        }
       }
 
       res.json({
@@ -348,6 +427,19 @@ export class TaskController {
           },
         });
         return;
+      }
+
+      // Broadcast to project room
+      if (task.column?.projectId) {
+        broadcastTaskReordered(
+          {
+            taskId,
+            columnId: task.columnId,
+            order: task.order,
+            projectId: task.column.projectId,
+          },
+          userId
+        );
       }
 
       res.json({

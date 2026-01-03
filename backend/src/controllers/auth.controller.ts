@@ -188,18 +188,11 @@ export class AuthController {
     try {
       const { email } = req.body as ForgotPasswordInput;
 
-      const token = await AuthService.generatePasswordResetToken(email);
+      // Generate reset token (will be used when email service is implemented)
+      // TODO: Implement email service to send actual reset link (Phase 5+)
+      await AuthService.generatePasswordResetToken(email);
 
       // Always return success to prevent email enumeration
-      // In production, you would send an email here
-      if (token && env.NODE_ENV === 'development') {
-        // In development only, log a masked preview for debugging
-        // Never log the full token as it could be captured in logs
-        const maskedToken = token.slice(0, 8) + '...' + token.slice(-4);
-        // TODO: Replace with structured logger when implementing Phase 2.1
-        console.debug(`[DEV] Password reset requested for ${email}. Token preview: ${maskedToken}`);
-        // TODO: Implement email service to send actual reset link
-      }
 
       res.json({
         success: true,

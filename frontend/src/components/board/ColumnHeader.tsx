@@ -10,6 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { usePresence } from '@/hooks/usePresence';
+import { PresenceIndicator } from '@/components/presence/PresenceIndicator';
 
 // Column status configuration with colors from Figma
 export const columnHeaderConfig: Record<
@@ -71,6 +73,7 @@ export interface ColumnHeaderProps {
   id: string;
   name: string;
   taskCount: number;
+  projectId?: string;
   onNameChange?: (newName: string) => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -82,6 +85,7 @@ export function ColumnHeader({
   id,
   name,
   taskCount,
+  projectId,
   onNameChange,
   onEdit,
   onDelete,
@@ -91,6 +95,14 @@ export function ColumnHeader({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(name);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Presence tracking for column name editing
+  const columnPresence = usePresence({
+    projectId: projectId || '',
+    taskId: id, // column id is used as taskId for presence
+    field: 'column-name',
+    enabled: !!projectId && isEditable,
+  });
 
   // Get column-specific styling based on name
   const config = columnHeaderConfig[name] || defaultHeaderConfig;
@@ -112,6 +124,7 @@ export function ColumnHeader({
     if (!isEditable) return;
     setIsEditing(true);
     setEditValue(name);
+    columnPresence.startEditing();
   };
 
   const handleSave = () => {
@@ -122,11 +135,13 @@ export function ColumnHeader({
       setEditValue(name); // Reset to original if empty or unchanged
     }
     setIsEditing(false);
+    columnPresence.stopEditing();
   };
 
   const handleCancel = () => {
     setEditValue(name);
     setIsEditing(false);
+    columnPresence.stopEditing();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -156,6 +171,7 @@ export function ColumnHeader({
             type="text"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
+            onFocus={columnPresence.startEditing}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
             className={cn(
@@ -165,25 +181,38 @@ export function ColumnHeader({
             maxLength={50}
           />
         ) : (
-          <span
-            className={cn(
-              'text-base font-medium leading-6 truncate cursor-pointer hover:opacity-80 transition-opacity',
-              config.headerText,
-              isEditable && 'cursor-text'
+          <>
+            <span
+              className={cn(
+                'text-base font-medium leading-6 truncate cursor-pointer hover:opacity-80 transition-opacity',
+                config.headerText,
+                isEditable && 'cursor-text'
+              )}
+              onClick={handleStartEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleStartEdit();
+                }
+              }}
+              role={isEditable ? 'button' : undefined}
+              tabIndex={isEditable ? 0 : undefined}
+              title={isEditable ? 'Click to edit column name' : name}
+            >
+              {name}
+            </span>
+            {/* Presence indicator - show when someone else is editing */}
+            {columnPresence.editingUser && (
+              <PresenceIndicator
+                user={{
+                  id: columnPresence.editingUser.id,
+                  name: columnPresence.editingUser.name,
+                  avatar: columnPresence.editingUser.avatar || null,
+                }}
+                size="sm"
+              />
             )}
-            onClick={handleStartEdit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleStartEdit();
-              }
-            }}
-            role={isEditable ? 'button' : undefined}
-            tabIndex={isEditable ? 0 : undefined}
-            title={isEditable ? 'Click to edit column name' : name}
-          >
-            {name}
-          </span>
+          </>
         )}
 
         {/* Task Count Badge */}

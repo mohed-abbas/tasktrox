@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'sonner';
 import { queryClient } from '@/lib/query-client';
 import { AuthProvider } from '@/hooks/useAuth';
+import { SocketProvider } from '@/providers/SocketProvider';
 
 interface ProvidersProps {
   children: React.ReactNode;
@@ -14,7 +15,9 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {children}
+        <SocketProvider>
+          {children}
+        </SocketProvider>
       </AuthProvider>
       <Toaster
         position="bottom-right"

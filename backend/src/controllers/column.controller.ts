@@ -6,6 +6,25 @@ import type {
   ReorderColumnInput,
   ReorderProjectColumnInput,
 } from '../validators/column.validator.js';
+import {
+  broadcastColumnCreated,
+  broadcastColumnUpdated,
+  broadcastColumnDeleted,
+  broadcastColumnReordered,
+} from '../sockets/broadcast.js';
+import type { LiveColumn } from '../types/presence.js';
+
+/**
+ * Convert a column from the service to LiveColumn format for broadcasting.
+ * Serializes Date objects to ISO strings.
+ */
+function toSerializableColumn(column: Record<string, unknown>): LiveColumn {
+  return {
+    ...column,
+    createdAt: (column.createdAt as Date).toISOString(),
+    updatedAt: (column.updatedAt as Date).toISOString(),
+  } as LiveColumn;
+}
 
 export class ColumnController {
   // ============ COLUMN CRUD ============
@@ -96,6 +115,9 @@ export class ColumnController {
         return;
       }
 
+      // Broadcast to project room
+      broadcastColumnCreated(projectId, toSerializableColumn(column), userId);
+
       res.status(201).json({
         success: true,
         data: { column },
@@ -128,6 +150,9 @@ export class ColumnController {
         return;
       }
 
+      // Broadcast to project room
+      broadcastColumnUpdated(column.projectId, toSerializableColumn(column), userId);
+
       res.json({
         success: true,
         data: { column },
@@ -146,6 +171,10 @@ export class ColumnController {
       const userId = req.user!.id;
       const columnId = req.params.columnId as string;
       const moveTasksToColumnId = req.query.moveTasksTo as string | undefined;
+
+      // Get column info before deletion for broadcasting
+      const columnInfo = await ColumnService.getColumnById(columnId, userId);
+      const projectId = columnInfo?.projectId;
 
       const result = await ColumnService.deleteColumn(columnId, userId, moveTasksToColumnId);
 
@@ -166,6 +195,11 @@ export class ColumnController {
           },
         });
         return;
+      }
+
+      // Broadcast to project room
+      if (projectId) {
+        broadcastColumnDeleted(projectId, columnId, userId);
       }
 
       res.json({
@@ -200,6 +234,16 @@ export class ColumnController {
         return;
       }
 
+      // Broadcast to project room
+      broadcastColumnReordered(
+        {
+          columnId,
+          order: column.order,
+          projectId: column.projectId,
+        },
+        userId
+      );
+
       res.json({
         success: true,
         data: { column },
@@ -231,6 +275,16 @@ export class ColumnController {
         });
         return;
       }
+
+      // Broadcast to project room
+      broadcastColumnReordered(
+        {
+          columnId,
+          order: column.order,
+          projectId: column.projectId,
+        },
+        userId
+      );
 
       res.json({
         success: true,
