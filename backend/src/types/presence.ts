@@ -249,6 +249,28 @@ export interface ServerToClientEvents {
    * @param data - The deleted attachment ID and metadata
    */
   'attachment:deleted': (data: { attachmentId: string; taskId: string; projectId: string; meta: LiveUpdateMeta }) => void;
+
+  // -------------------------------------------------------------------------
+  // Comment Live Update Events
+  // -------------------------------------------------------------------------
+
+  /**
+   * Broadcast when a new comment is created.
+   * @param data - The comment data with metadata
+   */
+  'comment:created': (data: { comment: LiveComment; meta: LiveUpdateMeta }) => void;
+
+  /**
+   * Broadcast when a comment is updated.
+   * @param data - The updated comment data with metadata
+   */
+  'comment:updated': (data: { comment: LiveComment; meta: LiveUpdateMeta }) => void;
+
+  /**
+   * Broadcast when a comment is deleted.
+   * @param data - The deleted comment ID and metadata
+   */
+  'comment:deleted': (data: { commentId: string; taskId: string; projectId: string; meta: LiveUpdateMeta }) => void;
 }
 
 /**
@@ -354,6 +376,24 @@ export interface LiveAttachment {
   uploadedById: string;
   createdAt: string;
   uploadedBy: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
+}
+
+/**
+ * Comment data broadcast for live updates.
+ * Matches the shape returned by CommentService methods.
+ */
+export interface LiveComment {
+  id: string;
+  content: string;
+  taskId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
     id: string;
     name: string;
     avatar: string | null;
