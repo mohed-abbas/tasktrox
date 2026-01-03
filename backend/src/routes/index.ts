@@ -7,6 +7,7 @@ import labelRoutes from './label.routes.js';
 import assigneeRoutes from './assignee.routes.js';
 import searchRoutes from './search.routes.js';
 import activityRoutes from './activity.routes.js';
+import attachmentRoutes from './attachment.routes.js';
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.use('/', labelRoutes); // Label routes handle /projects/:projectId/labels
 router.use('/', assigneeRoutes); // Assignee routes handle /projects/:projectId/tasks/:taskId/assignees
 router.use('/search', searchRoutes); // Search routes handle /search?q=query
 router.use('/', activityRoutes); // Activity routes handle /activities/me, /projects/:projectId/activities
+router.use('/', attachmentRoutes); // Attachment routes handle /projects/:projectId/tasks/:taskId/attachments
 // router.use('/users', userRoutes);
 
 export default router;

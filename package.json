@@ -24,6 +24,7 @@
     "db:studio": "npm run db:studio --workspace=backend"
   },
   "devDependencies": {
+    "@types/multer": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.19.0",
     "eslint": "^9.17.0",
@@ -35,5 +36,10 @@
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.962.0",
+    "@aws-sdk/s3-request-presigner": "^3.962.0",
+    "multer": "^2.0.2"
   }
 }

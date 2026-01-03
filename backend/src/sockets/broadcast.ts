@@ -11,6 +11,7 @@ import type {
   LiveTask,
   LiveColumn,
   LiveActivity,
+  LiveAttachment,
   LiveUpdateMeta,
   TaskMovedPayload,
   TaskReorderedPayload,
@@ -310,6 +311,65 @@ export function broadcastActivityLogged(
     socketLogger.error(
       { error, projectId, activityId: activity.id },
       'Failed to broadcast activity:logged'
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Attachment Broadcast Functions
+// -----------------------------------------------------------------------------
+
+/**
+ * Broadcast when an attachment is uploaded.
+ */
+export function broadcastAttachmentUploaded(
+  projectId: string,
+  attachment: LiveAttachment,
+  userId: string
+): void {
+  try {
+    const io = getIO();
+    io.to(getProjectRoom(projectId)).emit('attachment:uploaded', {
+      attachment,
+      meta: createMeta(userId),
+    });
+    socketLogger.debug(
+      { projectId, attachmentId: attachment.id, userId },
+      'Broadcast attachment:uploaded'
+    );
+  } catch (error) {
+    socketLogger.error(
+      { error, projectId, attachmentId: attachment.id },
+      'Failed to broadcast attachment:uploaded'
+    );
+  }
+}
+
+/**
+ * Broadcast when an attachment is deleted.
+ */
+export function broadcastAttachmentDeleted(
+  projectId: string,
+  attachmentId: string,
+  taskId: string,
+  userId: string
+): void {
+  try {
+    const io = getIO();
+    io.to(getProjectRoom(projectId)).emit('attachment:deleted', {
+      attachmentId,
+      taskId,
+      projectId,
+      meta: createMeta(userId),
+    });
+    socketLogger.debug(
+      { projectId, attachmentId, taskId, userId },
+      'Broadcast attachment:deleted'
+    );
+  } catch (error) {
+    socketLogger.error(
+      { error, projectId, attachmentId },
+      'Failed to broadcast attachment:deleted'
     );
   }
 }

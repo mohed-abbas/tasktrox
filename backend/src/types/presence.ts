@@ -233,6 +233,22 @@ export interface ServerToClientEvents {
    * @param data - The activity data with metadata
    */
   'activity:logged': (data: { activity: LiveActivity; meta: LiveUpdateMeta }) => void;
+
+  // -------------------------------------------------------------------------
+  // Attachment Live Update Events
+  // -------------------------------------------------------------------------
+
+  /**
+   * Broadcast when a new attachment is uploaded.
+   * @param data - The attachment data with metadata
+   */
+  'attachment:uploaded': (data: { attachment: LiveAttachment; meta: LiveUpdateMeta }) => void;
+
+  /**
+   * Broadcast when an attachment is deleted.
+   * @param data - The deleted attachment ID and metadata
+   */
+  'attachment:deleted': (data: { attachmentId: string; taskId: string; projectId: string; meta: LiveUpdateMeta }) => void;
 }
 
 /**
@@ -321,6 +337,27 @@ export interface LiveActivity {
     id: string;
     title: string;
   } | null;
+}
+
+/**
+ * Attachment data broadcast for live updates.
+ * Matches the shape returned by AttachmentService methods.
+ */
+export interface LiveAttachment {
+  id: string;
+  filename: string;
+  originalName: string;
+  url: string;
+  size: number;
+  mimeType: string;
+  taskId: string;
+  uploadedById: string;
+  createdAt: string;
+  uploadedBy: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
 }
 
 /**
