@@ -9,6 +9,7 @@ import searchRoutes from './search.routes.js';
 import activityRoutes from './activity.routes.js';
 import attachmentRoutes from './attachment.routes.js';
 import commentRoutes from './comment.routes.js';
+import statsRoutes from './stats.routes.js';
 
 const router = Router();
 
@@ -35,6 +36,7 @@ router.use('/search', searchRoutes); // Search routes handle /search?q=query
 router.use('/', activityRoutes); // Activity routes handle /activities/me, /projects/:projectId/activities
 router.use('/', attachmentRoutes); // Attachment routes handle /projects/:projectId/tasks/:taskId/attachments
 router.use('/', commentRoutes); // Comment routes handle /projects/:projectId/tasks/:taskId/comments
+router.use('/stats', statsRoutes); // Stats routes handle /stats/dashboard, /stats/projects/:projectId
 // router.use('/users', userRoutes);
 
 export default router;
