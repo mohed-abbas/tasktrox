@@ -72,11 +72,8 @@ const envSchema = z.object({
   R2_BUCKET_NAME: z.string().default('tasktrox-files'),
   R2_PUBLIC_URL: z.string().optional(),
 
-  // Email (optional)
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().default(587),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
+  // Email - Resend (optional)
+  RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('noreply@tasktrox.com'),
 
   // Rate Limiting
