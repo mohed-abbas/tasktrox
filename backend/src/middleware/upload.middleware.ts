@@ -46,6 +46,30 @@ export const upload = multer({
   },
 });
 
+// Avatar-specific file filter (images only)
+const avatarFileFilter = (
+  _req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) => {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only JPEG, PNG, GIF, and WebP images are allowed for avatars'));
+  }
+};
+
+// Avatar upload (images only, 5MB max)
+export const avatarUpload = multer({
+  storage,
+  fileFilter: avatarFileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+    files: 1,
+  },
+});
+
 // Middleware for single file upload
 export const uploadSingle = upload.single('file');
 
