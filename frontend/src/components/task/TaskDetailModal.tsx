@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, MoreHorizontal, Trash2, Loader2 } from 'lucide-react';
+import { X, MoreHorizontal, Trash2, Loader2, Circle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import {
@@ -94,6 +94,7 @@ export interface TaskDetailModalProps {
   onOpenChange: (open: boolean) => void;
   onUpdate?: (taskId: string, data: Partial<Task>) => void;
   onDelete?: (taskId: string) => void;
+  onToggleComplete?: (taskId: string, completed: boolean) => void;
   isLoading?: boolean;
   // Label props
   projectLabels?: Label[];
@@ -111,6 +112,7 @@ export function TaskDetailModal({
   onOpenChange,
   onUpdate,
   onDelete,
+  onToggleComplete,
   isLoading = false,
   projectLabels = [],
   onLabelsChange,
@@ -118,6 +120,7 @@ export function TaskDetailModal({
   projectId,
   readOnly = false,
 }: TaskDetailModalProps) {
+  const isCompleted = !!task?.completedAt;
   // Local state for editing
   const [editableData, setEditableData] = useState<EditableTaskData>({
     title: task?.title ?? '',
@@ -360,9 +363,32 @@ export function TaskDetailModal({
                   variants={itemVariants}
                   className="flex items-start justify-between p-6 pb-0 sticky top-0 bg-white z-10"
                 >
-                  <div className="flex-1 pr-4">
+                  <div className="flex items-start gap-3 flex-1 pr-4">
+                    {/* Completion Toggle */}
+                    {onToggleComplete && !readOnly ? (
+                      <button
+                        onClick={() => onToggleComplete(task.id, !isCompleted)}
+                        className="flex-shrink-0 mt-1 transition-colors"
+                        aria-label={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="size-6 text-green-500" />
+                        ) : (
+                          <Circle className="size-6 text-gray-300 hover:text-gray-400" />
+                        )}
+                      </button>
+                    ) : (
+                      <div className="flex-shrink-0 mt-1">
+                        {isCompleted ? (
+                          <CheckCircle2 className="size-6 text-green-500" />
+                        ) : (
+                          <Circle className="size-6 text-gray-300" />
+                        )}
+                      </div>
+                    )}
+
                     {/* Editable Title with Presence */}
-                    <div className="relative">
+                    <div className="relative flex-1">
                       <input
                         id="task-modal-title"
                         type="text"
@@ -380,7 +406,8 @@ export function TaskDetailModal({
                           'bg-transparent border-0 outline-none',
                           'focus:ring-0 p-0 pr-8',
                           'placeholder:text-gray-400',
-                          readOnly && 'cursor-default'
+                          readOnly && 'cursor-default',
+                          isCompleted && 'line-through text-gray-400'
                         )}
                         placeholder="Task title..."
                         autoFocus={!readOnly}

@@ -78,6 +78,7 @@ export const updateTaskBodySchema = z.object({
     .nullable()
     .optional()
     .or(z.literal('')),
+  completed: z.boolean().optional(),
 });
 
 export const moveTaskBodySchema = z.object({

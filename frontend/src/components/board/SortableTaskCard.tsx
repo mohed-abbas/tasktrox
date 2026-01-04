@@ -8,9 +8,10 @@ import { TaskCard } from './TaskCard';
 interface SortableTaskCardProps {
   task: Task;
   onClick?: () => void;
+  onToggleComplete?: (taskId: string, completed: boolean) => void;
 }
 
-export function SortableTaskCard({ task, onClick }: SortableTaskCardProps) {
+export function SortableTaskCard({ task, onClick, onToggleComplete }: SortableTaskCardProps) {
   const {
     attributes,
     listeners,
@@ -37,6 +38,7 @@ export function SortableTaskCard({ task, onClick }: SortableTaskCardProps) {
       <TaskCard
         task={task}
         onClick={onClick}
+        onToggleComplete={onToggleComplete}
         isDragging={isDragging}
       />
     </div>

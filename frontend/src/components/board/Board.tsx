@@ -21,6 +21,7 @@ export interface Task {
   columnId: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   dueDate: string | null;
+  completedAt: string | null;
   createdAt: string;
   updatedAt: string;
   labels?: { id: string; name: string; color: string }[];
@@ -41,6 +42,7 @@ interface BoardProps {
   onEditColumn?: (columnId: string, name: string) => void;
   onDeleteColumn?: (columnId: string) => void;
   onTaskClick?: (task: Task) => void;
+  onToggleComplete?: (taskId: string, completed: boolean) => void;
   onMoveTask?: (taskId: string, sourceColumnId: string, targetColumnId: string, newOrder: number) => void;
   onReorderColumn?: (columnId: string, newOrder: number) => void;
   isLoading?: boolean;
@@ -56,6 +58,7 @@ export function Board({
   onEditColumn,
   onDeleteColumn,
   onTaskClick,
+  onToggleComplete,
   onMoveTask,
   onReorderColumn,
   isLoading = false,
@@ -154,6 +157,7 @@ export function Board({
             onNameChange={readOnly ? undefined : (newName) => onEditColumn?.(column.id, newName)}
             onDeleteColumn={readOnly ? undefined : () => onDeleteColumn?.(column.id)}
             onTaskClick={onTaskClick}
+            onToggleComplete={readOnly ? undefined : onToggleComplete}
             isDraggingTask={activeItem?.type === 'task'}
             isEditable={!readOnly}
           />

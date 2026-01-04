@@ -9,6 +9,7 @@ import type {
 import { ColumnService } from './column.service.js';
 import { ProjectService } from './project.service.js';
 import { taskCache } from './cache.service.js';
+import { ActivityService, ActivityAction } from './activity.service.js';
 
 type TaskWithRelations = Task & {
   column?: {
@@ -398,6 +399,12 @@ export class TaskService {
         data.dueDate === null || data.dueDate === '' ? null : new Date(data.dueDate);
     }
 
+    // Handle task completion
+    const wasCompleted = task.completedAt !== null;
+    if (data.completed !== undefined) {
+      updateData.completedAt = data.completed ? new Date() : null;
+    }
+
     const updatedTask = await prisma.task.update({
       where: { id: taskId },
       data: updateData,
@@ -413,6 +420,36 @@ export class TaskService {
         },
       },
     });
+
+    // Log activity for task completion/reopening
+    if (data.completed !== undefined) {
+      const isNowCompleted = updatedTask.completedAt !== null;
+      if (isNowCompleted && !wasCompleted) {
+        // Task was just completed
+        ActivityService.logAsync({
+          action: ActivityAction.TASK_COMPLETED,
+          projectId: task.column.projectId,
+          userId,
+          taskId,
+          metadata: {
+            taskTitle: updatedTask.title,
+            taskId,
+          },
+        });
+      } else if (!isNowCompleted && wasCompleted) {
+        // Task was reopened
+        ActivityService.logAsync({
+          action: ActivityAction.TASK_REOPENED,
+          projectId: task.column.projectId,
+          userId,
+          taskId,
+          metadata: {
+            taskTitle: updatedTask.title,
+            taskId,
+          },
+        });
+      }
+    }
 
     // Invalidate task and project caches
     await taskCache.invalidateTask(taskId, task.column.projectId);

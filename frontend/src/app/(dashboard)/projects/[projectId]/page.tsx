@@ -110,7 +110,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     isLoadingTasks,
     createTask,
     moveTask,
-    updateTask: _updateTaskFromList,
+    updateTask: updateTaskFromList,
     deleteTask: _deleteTaskFromList,
   } = useTasks({ projectId });
 
@@ -137,6 +137,14 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     setSelectedTaskId(task.id);
     setIsModalOpen(true);
   }, []);
+
+  // Handle task completion toggle
+  const handleToggleComplete = useCallback((taskId: string, completed: boolean) => {
+    updateTaskFromList({
+      taskId,
+      data: { completed },
+    });
+  }, [updateTaskFromList]);
 
   // Handle modal close
   const handleModalClose = useCallback((open: boolean) => {
@@ -349,6 +357,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               deleteColumn(columnId);
             }}
             onTaskClick={handleTaskClick}
+            onToggleComplete={canEditTasks ? handleToggleComplete : undefined}
             onMoveTask={(taskId, sourceColumnId, targetColumnId, newOrder) => {
               moveTask({
                 taskId,
@@ -394,6 +403,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
         onOpenChange={handleModalClose}
         onUpdate={canEditTasks ? handleTaskUpdate : undefined}
         onDelete={canEditTasks ? handleTaskDelete : undefined}
+        onToggleComplete={canEditTasks ? handleToggleComplete : undefined}
         isLoading={isLoadingTask}
         projectLabels={projectLabels}
         onLabelsChange={canEditTasks ? handleLabelsChange : undefined}
