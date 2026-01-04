@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { FloatingTaskCard } from './showcase/FloatingTaskCard';
 import { FloatingProgressCard } from './showcase/FloatingProgressCard';
 import { FloatingMemberDialog } from './showcase/FloatingMemberDialog';
+import { productShowcaseContent } from '@/data/landing/product-showcase';
 
 export function ProductShowcase() {
   return (
@@ -19,9 +20,9 @@ export function ProductShowcase() {
             transition={{ duration: 0.5 }}
             className="text-3xl sm:text-4xl lg:text-5xl font-medium text-gray-800 leading-tight mb-4 lg:mb-6"
           >
-            Your All-In-One Task
+            {productShowcaseContent.header.line1}
             <br />
-            Command Center
+            {productShowcaseContent.header.line2}
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -30,8 +31,7 @@ export function ProductShowcase() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-base lg:text-lg text-gray-500 max-w-[560px] mx-auto leading-relaxed"
           >
-            Experience a real-time view of all your projects, tasks, and teams
-            — organized visually, designed for speed.
+            {productShowcaseContent.description}
           </motion.p>
         </div>
 

@@ -2,14 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-
-const companies = [
-  { name: 'Zentora', logo: '/images/logos/zentora.svg' },
-  { name: 'Pulseframe', logo: '/images/logos/pulseframe.svg' },
-  { name: 'Nexvio', logo: '/images/logos/nexvio.svg' },
-  { name: 'Cloudova', logo: '/images/logos/cloudova.svg' },
-  { name: 'Quantura', logo: '/images/logos/quantura.svg' },
-];
+import { companies } from '@/data/landing/companies';
 
 export function LogoBar() {
   return (
@@ -31,15 +24,17 @@ export function LogoBar() {
               transition={{ duration: 0.4, delay: index * 0.1 }}
               className="flex items-center gap-3"
             >
-              <div className="w-12 h-12 shrink-0">
-                <Image
-                  src={company.logo}
-                  alt={`${company.name} logo`}
-                  width={48}
-                  height={48}
-                  className="w-full h-full"
-                />
-              </div>
+              {company.logo && (
+                <div className="w-12 h-12 shrink-0">
+                  <Image
+                    src={company.logo}
+                    alt={`${company.name} logo`}
+                    width={48}
+                    height={48}
+                    className="w-full h-full"
+                  />
+                </div>
+              )}
               <span className="text-[22px] font-semibold text-[#636e7c] whitespace-nowrap">
                 {company.name}
               </span>

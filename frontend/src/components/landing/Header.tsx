@@ -5,14 +5,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
-
-const navLinks = [
-  { label: 'Home', href: '#' },
-  { label: 'Features', href: '#features' },
-  { label: 'Solutions', href: '#solutions' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Resources', href: '#resources' },
-];
+import { headerNavLinks, headerCTA } from '@/data/navigation/header';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -28,7 +21,7 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-10">
-            {navLinks.map((link) => (
+            {headerNavLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
@@ -42,10 +35,10 @@ export function Header() {
           {/* CTA Button */}
           <div className="hidden lg:block">
             <Link
-              href="/login"
+              href={headerCTA.href}
               className="inline-flex items-center justify-center bg-gray-800 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
             >
-              Get Started
+              {headerCTA.text}
             </Link>
           </div>
 
@@ -72,7 +65,7 @@ export function Header() {
             className="lg:hidden bg-white border-t border-gray-100"
           >
             <div className="px-6 py-4 space-y-3">
-              {navLinks.map((link) => (
+              {headerNavLinks.map((link) => (
                 <Link
                   key={link.label}
                   href={link.href}
@@ -83,11 +76,11 @@ export function Header() {
                 </Link>
               ))}
               <Link
-                href="/login"
+                href={headerCTA.href}
                 className="block w-full text-center bg-gray-800 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors mt-4"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Get Started
+                {headerCTA.text}
               </Link>
             </div>
           </motion.div>

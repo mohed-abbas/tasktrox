@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { heroContent } from '@/data/landing/hero';
 
 // Animation variants
 const fadeInUp = {
@@ -51,10 +52,10 @@ export function Hero() {
             className="inline-flex items-center gap-1.5 bg-[#f5f5f5] rounded-full px-2 py-1.5 mb-3"
           >
             <span className="bg-[#090909] text-white text-sm font-medium px-2.5 py-0.5 rounded-full">
-              New
+              {heroContent.badge.label}
             </span>
             <span className="text-[#090909] text-base pr-1">
-              Built for Smart Teams
+              {heroContent.badge.text}
             </span>
           </motion.div>
 
@@ -66,9 +67,9 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-[48px] md:text-[64px] lg:text-[76px] font-medium text-black leading-[1.2] tracking-tight capitalize"
           >
-            Your Daily Tasks
+            {heroContent.headline.line1}
             <br />
-            Organized Effortlessly
+            {heroContent.headline.line2}
           </motion.h1>
 
           {/* Subheadline */}
@@ -79,8 +80,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-[rgba(68,69,78,0.7)] max-w-[749px] mx-auto mt-[22px] leading-[1.5]"
           >
-            Tasktrox helps you manage daily tasks, assign teammates, and track
-            progress — all in a simple, fast, and visual workspace.
+            {heroContent.subheadline}
           </motion.p>
 
           {/* CTA Buttons */}
@@ -92,18 +92,18 @@ export function Hero() {
             className="flex items-center justify-center gap-2.5 mt-7"
           >
             <Link
-              href="/login"
+              href={heroContent.cta.primary.href}
               className="relative inline-flex items-center justify-center bg-gradient-to-b from-[#262730] from-[80%] to-[rgba(56,57,66,0.7)] text-white px-6 py-2.5 rounded-[7px] text-sm capitalize border border-white/20 overflow-hidden hover:opacity-90 transition-opacity"
             >
-              <span className="relative z-10">Get Started</span>
+              <span className="relative z-10">{heroContent.cta.primary.text}</span>
               <div className="absolute inset-0 shadow-[inset_0px_3px_0px_0px_rgba(255,255,255,0.2)]" />
             </Link>
-            <button
-              type="button"
+            <Link
+              href={heroContent.cta.secondary.href}
               className="inline-flex items-center justify-center bg-white text-[#262730] px-6 py-2.5 rounded-[7px] text-sm font-medium capitalize shadow-[0px_-0.5px_1px_0px_rgba(0,0,0,0.15),0px_1px_1px_0px_rgba(0,0,0,0.3)] hover:bg-gray-50 transition-colors"
             >
-              View Demo
-            </button>
+              {heroContent.cta.secondary.text}
+            </Link>
           </motion.div>
         </div>
 

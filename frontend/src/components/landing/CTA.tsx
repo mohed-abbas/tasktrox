@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { ctaContent } from '@/data/landing/cta';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -31,7 +32,7 @@ export function CTA() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-[32px] md:text-[44px] lg:text-[56px] font-medium text-white leading-[1.2] text-center capitalize max-w-[718px]"
             >
-              Start Getting Things Done Visually And Effortlessly
+              {ctaContent.heading}
             </motion.h2>
 
             {/* Description */}
@@ -43,9 +44,7 @@ export function CTA() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-base md:text-lg lg:text-xl text-white/70 text-center leading-[1.5] max-w-[936px]"
             >
-              Unlock your team's potential by organizing tasks with Tasktrox —
-              the modern, intuitive to-do app designed to boost productivity and
-              reduce chaos.
+              {ctaContent.description}
             </motion.p>
 
             {/* CTA Button */}
@@ -57,10 +56,10 @@ export function CTA() {
               transition={{ duration: 0.5, delay: 0.3 }}
             >
               <Link
-                href="/login"
+                href={ctaContent.buttonHref}
                 className="inline-flex items-center justify-center bg-white text-[#262730] px-6 py-2.5 rounded-[7px] text-sm font-medium capitalize border border-gray-200 hover:bg-gray-50 transition-colors"
               >
-                Get Started
+                {ctaContent.buttonText}
               </Link>
             </motion.div>
           </div>
