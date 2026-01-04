@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import type { User, AuthState, RegisterInput, LoginInput } from '@/types/auth';
+import type { AuthState, RegisterInput, LoginInput } from '@/types/auth';
 import * as authApi from '@/lib/api/auth';
 
 interface AuthContextType extends AuthState {

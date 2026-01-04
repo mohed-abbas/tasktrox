@@ -5,14 +5,13 @@ import { Strategy as GoogleStrategy, Profile as GoogleProfile } from 'passport-g
 import { prisma } from './database.js';
 import { env } from './env.js';
 import { AuthService } from '../services/auth.service.js';
-import type { User } from '@prisma/client';
 
 // Use validated environment variable - no fallback (fail-fast on startup)
 const JWT_SECRET = env.JWT_SECRET;
 
 // Serialize user ID to session
 passport.serializeUser((user: Express.User, done) => {
-  done(null, (user as User).id);
+  done(null, user.id);
 });
 
 // Deserialize user from session

@@ -6,7 +6,6 @@ import {
   getProjects,
   createProject,
   deleteProject,
-  type Project,
   type CreateProjectInput,
 } from '@/lib/api/projects';
 
@@ -27,7 +26,7 @@ export function useProjects() {
   // Create project mutation
   const createProjectMutation = useMutation({
     mutationFn: (data: CreateProjectInput) => createProject(data),
-    onSuccess: (newProject) => {
+    onSuccess: () => {
       // Invalidate and refetch projects list
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success('Project created successfully');

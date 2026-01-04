@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { BarChart3, Calendar, FolderKanban } from 'lucide-react';
 import { useProjects } from '@/hooks';
 import { useProjectReports } from '@/hooks/useReports';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import {
   Select,
   SelectContent,

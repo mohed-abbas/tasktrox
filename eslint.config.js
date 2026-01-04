@@ -28,6 +28,8 @@ export default [
         ...globals.node,
         JSX: 'readonly',
         React: 'readonly',
+        Express: 'readonly',
+        NodeJS: 'readonly',
       },
     },
     plugins: {

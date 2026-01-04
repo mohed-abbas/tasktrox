@@ -78,7 +78,7 @@ router.get(
   (req, res, next) => {
     passport.authenticate('google', {
       session: false,
-    }, (err: Error | null, user: Express.User | false) => {
+    }, (err: Error | null, user: Express.User | false | null) => {
       if (err || !user) {
         // Redirect to frontend error page on authentication failure
         return res.redirect(`${env.FRONTEND_URL}/auth/error?message=${encodeURIComponent(err?.message || 'Authentication failed')}`);
@@ -141,7 +141,7 @@ if (process.env.NODE_ENV === 'development') {
       });
 
       // Remove password from response
-      const { password, ...safeUser } = user;
+      const { password: _password, ...safeUser } = user;
 
       res.status(201).json({
         success: true,

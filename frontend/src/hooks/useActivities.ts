@@ -6,7 +6,6 @@ import {
   getTaskActivities,
   getUserActivities,
   type Activity,
-  type GetActivitiesParams,
 } from '@/lib/api/activities';
 
 interface UseProjectActivitiesOptions {

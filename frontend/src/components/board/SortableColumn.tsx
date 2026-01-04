@@ -7,7 +7,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
 import type { Task } from './Board';
-import { ColumnHeader, columnHeaderConfig } from './ColumnHeader';
+import { ColumnHeader } from './ColumnHeader';
 import { SortableTaskCard } from './SortableTaskCard';
 import { AddTaskForm } from './AddTaskForm';
 

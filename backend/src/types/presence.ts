@@ -277,6 +277,7 @@ export interface ServerToClientEvents {
  * Events for server-to-server communication.
  * Reserved for future horizontal scaling with multiple Socket.io servers.
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface InterServerEvents {
   // Empty for now - will be used for multi-server presence sync
 }

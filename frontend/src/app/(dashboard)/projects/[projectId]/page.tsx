@@ -110,8 +110,8 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     isLoadingTasks,
     createTask,
     moveTask,
-    updateTask: updateTaskFromList,
-    deleteTask: deleteTaskFromList,
+    updateTask: _updateTaskFromList,
+    deleteTask: _deleteTaskFromList,
   } = useTasks({ projectId });
 
   // Single task operations for the modal
@@ -159,7 +159,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   }, [updateTask]);
 
   // Handle task delete from modal
-  const handleTaskDelete = useCallback((taskId: string) => {
+  const handleTaskDelete = useCallback((_taskId: string) => {
     deleteTask();
   }, [deleteTask]);
 

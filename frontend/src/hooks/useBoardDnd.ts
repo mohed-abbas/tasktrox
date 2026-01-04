@@ -169,19 +169,6 @@ export function useBoardDnd({
     [localColumns]
   );
 
-  // Find column containing a task
-  const findColumnByTaskId = useCallback(
-    (taskId: string): string | undefined => {
-      for (const column of localColumns) {
-        if (column.tasks?.some((t) => t.id === taskId)) {
-          return column.id;
-        }
-      }
-      return undefined;
-    },
-    [localColumns]
-  );
-
   // Handle drag start - set active item for overlay
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {

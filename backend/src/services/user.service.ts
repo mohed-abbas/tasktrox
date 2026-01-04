@@ -3,6 +3,9 @@ import { AuthService } from './auth.service.js';
 import { uploadToR2, deleteFromR2, getPublicUrl, R2_PUBLIC_URL } from '../config/storage.js';
 import type { User } from '@prisma/client';
 
+// Multer file type
+type MulterFile = Express.Multer.File;
+
 // Safe user data (without password)
 export interface SafeUser {
   id: string;
@@ -82,7 +85,7 @@ export class UserService {
    */
   static async uploadAvatar(
     userId: string,
-    file: Express.Multer.File
+    file: MulterFile
   ): Promise<{ avatar: string }> {
     const user = await prisma.user.findUnique({
       where: { id: userId },

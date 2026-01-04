@@ -5,16 +5,19 @@
  * Files are stored in memory before being uploaded to R2.
  */
 
-import multer from 'multer';
+import multer, { type FileFilterCallback } from 'multer';
 import path from 'path';
 import type { Request } from 'express';
 import { storageConfig } from '../config/storage.js';
 
+// Multer file type
+type MulterFile = Express.Multer.File;
+
 // File filter to validate file types
 const fileFilter = (
   _req: Request,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback
+  file: MulterFile,
+  cb: FileFilterCallback
 ) => {
   // Check MIME type
   if (storageConfig.allowedMimeTypes.includes(file.mimetype)) {
@@ -49,8 +52,8 @@ export const upload = multer({
 // Avatar-specific file filter (images only)
 const avatarFileFilter = (
   _req: Request,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback
+  file: MulterFile,
+  cb: FileFilterCallback
 ) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   if (allowedTypes.includes(file.mimetype)) {

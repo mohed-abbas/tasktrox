@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronDown,
   ChevronRight,
   Calendar,
   Clock,
@@ -215,7 +214,7 @@ function TaskRow({ task, onClick, index }: TaskRowProps) {
 
 export function ListView({
   columns,
-  projectId,
+  projectId: _projectId,
   isLoading = false,
   onTaskClick,
 }: ListViewProps) {

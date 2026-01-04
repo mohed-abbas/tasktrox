@@ -9,8 +9,6 @@ import {
   FileText,
   Folder,
   Loader2,
-  Flag,
-  Calendar,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSearch } from '@/hooks/useSearch';
