@@ -145,6 +145,38 @@ export interface ColumnReorderedPayload {
   meta: LiveUpdateMeta;
 }
 
+// Comment live update types
+export interface LiveComment {
+  id: string;
+  content: string;
+  taskId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
+}
+
+export interface CommentCreatedPayload {
+  comment: LiveComment;
+  meta: LiveUpdateMeta;
+}
+
+export interface CommentUpdatedPayload {
+  comment: LiveComment;
+  meta: LiveUpdateMeta;
+}
+
+export interface CommentDeletedPayload {
+  commentId: string;
+  taskId: string;
+  projectId: string;
+  meta: LiveUpdateMeta;
+}
+
 // Socket.io typed events
 export interface ClientToServerEvents {
   'project:join': (projectId: string) => void;
@@ -169,6 +201,10 @@ export interface ServerToClientEvents {
   'column:updated': (payload: ColumnUpdatedPayload) => void;
   'column:deleted': (payload: ColumnDeletedPayload) => void;
   'column:reordered': (payload: ColumnReorderedPayload) => void;
+  // Comment live update events
+  'comment:created': (payload: CommentCreatedPayload) => void;
+  'comment:updated': (payload: CommentUpdatedPayload) => void;
+  'comment:deleted': (payload: CommentDeletedPayload) => void;
 }
 
 // Typed socket instance

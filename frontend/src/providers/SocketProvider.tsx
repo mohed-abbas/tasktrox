@@ -43,6 +43,9 @@ import {
   type ColumnUpdatedPayload,
   type ColumnDeletedPayload,
   type ColumnReorderedPayload,
+  type CommentCreatedPayload,
+  type CommentUpdatedPayload,
+  type CommentDeletedPayload,
 } from '@/lib/socket';
 
 // Types
@@ -252,6 +255,62 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     [user?.id]
   );
 
+  // Comment Live Update Handlers
+  const handleCommentCreated = useCallback(
+    (payload: CommentCreatedPayload) => {
+      if (!isMountedRef.current) return;
+      // Skip if current user made the change (already updated via mutation)
+      if (payload.meta.userId === user?.id) return;
+
+      // Invalidate comments query for this task
+      queryClient.invalidateQueries({
+        queryKey: ['comments'],
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          // Match ['comments', projectId, taskId] pattern
+          return queryKey[0] === 'comments' && queryKey[2] === payload.comment.taskId;
+        },
+      });
+      toast.info('New comment added');
+    },
+    [user?.id]
+  );
+
+  const handleCommentUpdated = useCallback(
+    (payload: CommentUpdatedPayload) => {
+      if (!isMountedRef.current) return;
+      if (payload.meta.userId === user?.id) return;
+
+      // Invalidate comments query for this task
+      queryClient.invalidateQueries({
+        queryKey: ['comments'],
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return queryKey[0] === 'comments' && queryKey[2] === payload.comment.taskId;
+        },
+      });
+    },
+    [user?.id]
+  );
+
+  const handleCommentDeleted = useCallback(
+    (payload: CommentDeletedPayload) => {
+      if (!isMountedRef.current) return;
+      if (payload.meta.userId === user?.id) return;
+
+      // Invalidate comments query for this task
+      queryClient.invalidateQueries({
+        queryKey: ['comments'],
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return queryKey[0] === 'comments' && queryKey[2] === payload.taskId;
+        },
+      });
+      toast.info('A comment was deleted');
+    },
+    [user?.id]
+  );
+
   // Handle socket connect event
   const handleConnect = useCallback(() => {
     if (!isMountedRef.current) return;
@@ -317,6 +376,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     socket.on('column:deleted', handleColumnDeleted);
     socket.on('column:reordered', handleColumnReordered);
 
+    // Set up comment live update event listeners
+    socket.on('comment:created', handleCommentCreated);
+    socket.on('comment:updated', handleCommentUpdated);
+    socket.on('comment:deleted', handleCommentDeleted);
+
     // Update connected state if already connected
     if (socket.connected) {
       setIsConnected(true);
@@ -344,6 +408,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       socket.off('column:deleted', handleColumnDeleted);
       socket.off('column:reordered', handleColumnReordered);
 
+      // Remove comment live update event listeners
+      socket.off('comment:created', handleCommentCreated);
+      socket.off('comment:updated', handleCommentUpdated);
+      socket.off('comment:deleted', handleCommentDeleted);
+
       disconnectSocket();
     };
   }, [
@@ -363,6 +432,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     handleColumnUpdated,
     handleColumnDeleted,
     handleColumnReordered,
+    handleCommentCreated,
+    handleCommentUpdated,
+    handleCommentDeleted,
   ]);
 
   // Start editing a field
