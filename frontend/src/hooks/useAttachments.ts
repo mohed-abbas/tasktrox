@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   getTaskAttachments,
   uploadAttachment,
@@ -15,7 +17,7 @@ interface UseAttachmentsOptions {
 }
 
 /**
- * Hook for managing task attachments
+ * Hook for managing task attachments with optimistic updates
  */
 export function useAttachments({
   projectId,
@@ -23,6 +25,7 @@ export function useAttachments({
   enabled = true,
 }: UseAttachmentsOptions) {
   const queryClient = useQueryClient();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Query for fetching attachments
   const query = useQuery({
@@ -41,18 +44,40 @@ export function useAttachments({
         ['attachments', projectId, taskId],
         (old) => (old ? [newAttachment, ...old] : [newAttachment])
       );
+      // Also invalidate tasks to update attachment count
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+      toast.success('File uploaded successfully');
+    },
+    onError: (err) => {
+      toast.error('Failed to upload file', {
+        description: err instanceof Error ? err.message : 'Please try again',
+      });
     },
   });
 
   // Mutation for deleting an attachment
   const deleteMutation = useMutation({
-    mutationFn: (attachmentId: string) => deleteAttachment(projectId, attachmentId),
+    mutationFn: (attachmentId: string) => {
+      setDeletingId(attachmentId);
+      return deleteAttachment(projectId, attachmentId);
+    },
     onSuccess: (_data, attachmentId) => {
       // Remove attachment from cache
       queryClient.setQueryData<Attachment[]>(
         ['attachments', projectId, taskId],
         (old) => old?.filter((a) => a.id !== attachmentId) ?? []
       );
+      // Also invalidate tasks to update attachment count
+      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+      toast.success('Attachment deleted');
+    },
+    onError: (err) => {
+      toast.error('Failed to delete attachment', {
+        description: err instanceof Error ? err.message : 'Please try again',
+      });
+    },
+    onSettled: () => {
+      setDeletingId(null);
     },
   });
 
@@ -73,6 +98,7 @@ export function useAttachments({
     deleteAttachment: deleteMutation.mutate,
     deleteAsync: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
+    deletingId,
     deleteError: deleteMutation.error,
 
     // Refetch

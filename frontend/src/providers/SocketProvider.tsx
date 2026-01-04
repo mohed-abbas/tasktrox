@@ -46,6 +46,8 @@ import {
   type CommentCreatedPayload,
   type CommentUpdatedPayload,
   type CommentDeletedPayload,
+  type AttachmentUploadedPayload,
+  type AttachmentDeletedPayload,
 } from '@/lib/socket';
 
 // Types
@@ -311,6 +313,49 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     [user?.id]
   );
 
+  // Attachment Live Update Handlers
+  const handleAttachmentUploaded = useCallback(
+    (payload: AttachmentUploadedPayload) => {
+      if (!isMountedRef.current) return;
+      // Skip if current user made the change (already updated via mutation)
+      if (payload.meta.userId === user?.id) return;
+
+      // Invalidate attachments query for this task
+      queryClient.invalidateQueries({
+        queryKey: ['attachments'],
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          // Match ['attachments', projectId, taskId] pattern
+          return queryKey[0] === 'attachments' && queryKey[2] === payload.attachment.taskId;
+        },
+      });
+      // Also invalidate tasks to update attachment count on cards
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.info('New attachment added');
+    },
+    [user?.id]
+  );
+
+  const handleAttachmentDeleted = useCallback(
+    (payload: AttachmentDeletedPayload) => {
+      if (!isMountedRef.current) return;
+      if (payload.meta.userId === user?.id) return;
+
+      // Invalidate attachments query for this task
+      queryClient.invalidateQueries({
+        queryKey: ['attachments'],
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return queryKey[0] === 'attachments' && queryKey[2] === payload.taskId;
+        },
+      });
+      // Also invalidate tasks to update attachment count on cards
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast.info('An attachment was removed');
+    },
+    [user?.id]
+  );
+
   // Handle socket connect event
   const handleConnect = useCallback(() => {
     if (!isMountedRef.current) return;
@@ -381,6 +426,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     socket.on('comment:updated', handleCommentUpdated);
     socket.on('comment:deleted', handleCommentDeleted);
 
+    // Set up attachment live update event listeners
+    socket.on('attachment:uploaded', handleAttachmentUploaded);
+    socket.on('attachment:deleted', handleAttachmentDeleted);
+
     // Update connected state if already connected
     if (socket.connected) {
       setIsConnected(true);
@@ -413,6 +462,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       socket.off('comment:updated', handleCommentUpdated);
       socket.off('comment:deleted', handleCommentDeleted);
 
+      // Remove attachment live update event listeners
+      socket.off('attachment:uploaded', handleAttachmentUploaded);
+      socket.off('attachment:deleted', handleAttachmentDeleted);
+
       disconnectSocket();
     };
   }, [
@@ -435,6 +488,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     handleCommentCreated,
     handleCommentUpdated,
     handleCommentDeleted,
+    handleAttachmentUploaded,
+    handleAttachmentDeleted,
   ]);
 
   // Start editing a field

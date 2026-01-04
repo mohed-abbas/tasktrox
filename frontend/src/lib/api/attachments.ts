@@ -85,10 +85,14 @@ export async function deleteAttachment(
 }
 
 /**
- * Get download URL for an attachment (redirects to signed URL)
+ * Fetch a signed download URL for an attachment (authenticated)
+ * The returned URL can be used directly in browser without auth headers
  */
-export function getAttachmentDownloadUrl(attachmentId: string): string {
-  return `${api.defaults.baseURL}/attachments/${attachmentId}/download`;
+export async function fetchSignedDownloadUrl(attachmentId: string): Promise<string> {
+  const response = await api.get<ApiResponse<{ url: string }>>(
+    `/attachments/${attachmentId}/download`
+  );
+  return response.data.data.url;
 }
 
 /**

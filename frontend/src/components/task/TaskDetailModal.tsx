@@ -17,9 +17,11 @@ import { SaveIndicator } from './SaveIndicator';
 import { LabelSelector, LabelBadge } from '@/components/labels';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useAssignees } from '@/hooks/useAssignees';
+import { useAttachments } from '@/hooks/useAttachments';
 import { usePresence } from '@/hooks/usePresence';
 import { PresenceIndicator } from '@/components/presence/PresenceIndicator';
 import { CommentSection } from '@/components/comment';
+import { AttachmentUploader, AttachmentList } from '@/components/attachment';
 import type { Task } from '@/lib/api/tasks';
 import type { Label } from '@/lib/api/labels';
 
@@ -139,6 +141,26 @@ export function TaskDetailModal({
     taskId: task?.id,
     enabled: open && !!projectId && !!task?.id,
   });
+
+  // Attachments hook
+  const {
+    attachments,
+    isLoading: isAttachmentsLoading,
+    uploadAsync,
+    isUploading,
+    uploadError,
+    deleteAttachment,
+    deletingId,
+  } = useAttachments({
+    projectId: projectId || '',
+    taskId: task?.id || '',
+    enabled: open && !!projectId && !!task?.id,
+  });
+
+  // Wrapper for upload to handle the async properly
+  const handleUploadAttachment = useCallback(async (file: File) => {
+    await uploadAsync(file);
+  }, [uploadAsync]);
 
   // Presence hooks for real-time editing indicators
   const titlePresence = usePresence({
@@ -571,6 +593,33 @@ export function TaskDetailModal({
                           <span className="text-sm text-gray-400">No assignees</span>
                         )}
                       </div>
+                    </motion.div>
+                  )}
+
+                  {/* Attachments Section */}
+                  {projectId && task && (
+                    <motion.div variants={itemVariants} className="space-y-3">
+                      <label className="text-sm font-medium text-gray-700">
+                        Attachments
+                      </label>
+
+                      {/* Attachment uploader - hide when read-only */}
+                      {!readOnly && (
+                        <AttachmentUploader
+                          onUpload={handleUploadAttachment}
+                          isUploading={isUploading}
+                          error={uploadError}
+                          maxSizeMB={10}
+                        />
+                      )}
+
+                      {/* Attachment list */}
+                      <AttachmentList
+                        attachments={attachments}
+                        isLoading={isAttachmentsLoading}
+                        onDelete={readOnly ? undefined : deleteAttachment}
+                        deletingId={deletingId}
+                      />
                     </motion.div>
                   )}
 

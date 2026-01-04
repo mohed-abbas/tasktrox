@@ -217,8 +217,11 @@ export class AttachmentController {
         return;
       }
 
-      // Redirect to signed URL
-      res.redirect(downloadUrl);
+      // Return signed URL as JSON for frontend to use
+      res.json({
+        success: true,
+        data: { url: downloadUrl },
+      });
     } catch (error) {
       next(error);
     }
