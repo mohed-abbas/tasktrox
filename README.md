@@ -213,7 +213,7 @@ cd tasktrox/tasktrox-dev
 npm install
 
 # Start all services (PostgreSQL, Redis, Frontend, Backend)
-docker-compose up
+docker-compose up -d --build
 
 # Or run services separately:
 npm run dev:frontend    # http://localhost:3000
