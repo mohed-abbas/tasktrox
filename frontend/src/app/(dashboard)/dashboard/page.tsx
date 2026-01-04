@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useAuth, useProjects } from '@/hooks';
+import { useDashboardStats } from '@/hooks/useStats';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectCard } from '@/components/project/ProjectCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { RecentActivity, UpcomingTasks } from '@/components/dashboard';
 import {
   CheckSquare,
   FolderKanban,
@@ -12,6 +14,7 @@ import {
   TrendingUp,
   ArrowRight,
   Plus,
+  AlertTriangle,
 } from 'lucide-react';
 
 const MAX_DASHBOARD_PROJECTS = 6;
@@ -19,6 +22,7 @@ const MAX_DASHBOARD_PROJECTS = 6;
 export default function DashboardPage() {
   const { user } = useAuth();
   const { projects, isLoading: isLoadingProjects } = useProjects();
+  const { data: stats, isLoading: isLoadingStats } = useDashboardStats();
 
   // Sort by updatedAt desc and take only the first 6
   const recentProjects = [...projects]
@@ -48,7 +52,13 @@ export default function DashboardPage() {
                 <CheckSquare className="size-5 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-semibold text-gray-800">12</p>
+                {isLoadingStats ? (
+                  <Skeleton className="h-8 w-12 mb-1" />
+                ) : (
+                  <p className="text-2xl font-semibold text-gray-800">
+                    {stats?.tasks.total ?? 0}
+                  </p>
+                )}
                 <p className="text-xs text-gray-500">Total Tasks</p>
               </div>
             </div>
@@ -62,7 +72,13 @@ export default function DashboardPage() {
                 <Clock className="size-5 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-semibold text-gray-800">5</p>
+                {isLoadingStats ? (
+                  <Skeleton className="h-8 w-12 mb-1" />
+                ) : (
+                  <p className="text-2xl font-semibold text-gray-800">
+                    {stats?.tasks.inProgress ?? 0}
+                  </p>
+                )}
                 <p className="text-xs text-gray-500">In Progress</p>
               </div>
             </div>
@@ -76,7 +92,13 @@ export default function DashboardPage() {
                 <TrendingUp className="size-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-semibold text-gray-800">7</p>
+                {isLoadingStats ? (
+                  <Skeleton className="h-8 w-12 mb-1" />
+                ) : (
+                  <p className="text-2xl font-semibold text-gray-800">
+                    {stats?.tasks.completed ?? 0}
+                  </p>
+                )}
                 <p className="text-xs text-gray-500">Completed</p>
               </div>
             </div>
@@ -86,24 +108,48 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-label-purple-bg rounded-lg">
-                <FolderKanban className="size-5 text-label-purple-text" />
+              <div className="p-2 bg-error-light rounded-lg">
+                <AlertTriangle className="size-5 text-error" />
               </div>
               <div>
-                <p className="text-2xl font-semibold text-gray-800">
-                  {projects.length}
-                </p>
-                <p className="text-xs text-gray-500">Active Projects</p>
+                {isLoadingStats ? (
+                  <Skeleton className="h-8 w-12 mb-1" />
+                ) : (
+                  <p className="text-2xl font-semibold text-gray-800">
+                    {stats?.tasks.overdue ?? 0}
+                  </p>
+                )}
+                <p className="text-xs text-gray-500">Overdue</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Activity and Upcoming Tasks */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <UpcomingTasks
+          tasks={stats?.upcomingTasks ?? []}
+          isLoading={isLoadingStats}
+        />
+        <RecentActivity
+          activities={stats?.recentActivity ?? []}
+          isLoading={isLoadingStats}
+        />
+      </div>
+
       {/* Your Projects Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">Your Projects</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-800">Your Projects</h2>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 rounded-full">
+              <FolderKanban className="size-3.5 text-gray-500" />
+              <span className="text-xs font-medium text-gray-600">
+                {isLoadingStats ? '...' : stats?.projects.activeProjects ?? projects.length}
+              </span>
+            </div>
+          </div>
           {showViewAll && (
             <Link
               href="/projects"
@@ -144,16 +190,23 @@ export default function DashboardPage() {
         ) : (
           // Projects grid
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recentProjects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                id={project.id}
-                name={project.name}
-                description={project.description ?? undefined}
-                taskCount={0} // TODO: Add task count when available from API
-                memberCount={project._count?.members ?? project.members?.length ?? 1}
-              />
-            ))}
+            {recentProjects.map((project) => {
+              // Find task count from stats breakdown if available
+              const projectStats = stats?.projects.projectBreakdown.find(
+                (p) => p.projectId === project.id
+              );
+
+              return (
+                <ProjectCard
+                  key={project.id}
+                  id={project.id}
+                  name={project.name}
+                  description={project.description ?? undefined}
+                  taskCount={projectStats?.taskCount ?? 0}
+                  memberCount={project._count?.members ?? project.members?.length ?? 1}
+                />
+              );
+            })}
           </div>
         )}
       </div>

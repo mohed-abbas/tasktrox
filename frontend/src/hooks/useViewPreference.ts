@@ -31,7 +31,7 @@ export function useViewPreference({
       if (stored && ['board', 'list', 'grid'].includes(stored)) {
         setViewModeState(stored as ViewMode);
       }
-    } catch (error) {
+    } catch {
       // localStorage not available, use default
       console.warn('localStorage not available for view preference');
     }
@@ -44,7 +44,7 @@ export function useViewPreference({
       setViewModeState(mode);
       try {
         localStorage.setItem(storageKey, mode);
-      } catch (error) {
+      } catch {
         console.warn('Failed to save view preference to localStorage');
       }
     },

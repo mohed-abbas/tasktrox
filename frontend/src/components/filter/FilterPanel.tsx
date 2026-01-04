@@ -3,7 +3,6 @@
 import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Filter,
   X,
   Calendar,
   Flag,

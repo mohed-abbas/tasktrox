@@ -35,10 +35,11 @@ export const createColumnSchema = z.object({
 
 /**
  * PATCH /columns/:columnId
- * Update a column
+ * Update a column (legacy route)
  */
 export const updateColumnSchema = z.object({
   params: z.object({
+    projectId: z.string().min(1).optional(), // Optional for legacy route
     columnId: z.string().min(1, 'Column ID is required'),
   }),
   body: z.object({
@@ -53,10 +54,11 @@ export const updateColumnSchema = z.object({
 
 /**
  * DELETE /columns/:columnId
- * Delete a column
+ * Delete a column (legacy route)
  */
 export const deleteColumnSchema = z.object({
   params: z.object({
+    projectId: z.string().min(1).optional(), // Optional for legacy route
     columnId: z.string().min(1, 'Column ID is required'),
   }),
 });

@@ -11,6 +11,8 @@ import type {
   LiveTask,
   LiveColumn,
   LiveActivity,
+  LiveAttachment,
+  LiveComment,
   LiveUpdateMeta,
   TaskMovedPayload,
   TaskReorderedPayload,
@@ -310,6 +312,150 @@ export function broadcastActivityLogged(
     socketLogger.error(
       { error, projectId, activityId: activity.id },
       'Failed to broadcast activity:logged'
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Attachment Broadcast Functions
+// -----------------------------------------------------------------------------
+
+/**
+ * Broadcast when an attachment is uploaded.
+ */
+export function broadcastAttachmentUploaded(
+  projectId: string,
+  attachment: LiveAttachment,
+  userId: string
+): void {
+  try {
+    const io = getIO();
+    io.to(getProjectRoom(projectId)).emit('attachment:uploaded', {
+      attachment,
+      meta: createMeta(userId),
+    });
+    socketLogger.debug(
+      { projectId, attachmentId: attachment.id, userId },
+      'Broadcast attachment:uploaded'
+    );
+  } catch (error) {
+    socketLogger.error(
+      { error, projectId, attachmentId: attachment.id },
+      'Failed to broadcast attachment:uploaded'
+    );
+  }
+}
+
+/**
+ * Broadcast when an attachment is deleted.
+ */
+export function broadcastAttachmentDeleted(
+  projectId: string,
+  attachmentId: string,
+  taskId: string,
+  userId: string
+): void {
+  try {
+    const io = getIO();
+    io.to(getProjectRoom(projectId)).emit('attachment:deleted', {
+      attachmentId,
+      taskId,
+      projectId,
+      meta: createMeta(userId),
+    });
+    socketLogger.debug(
+      { projectId, attachmentId, taskId, userId },
+      'Broadcast attachment:deleted'
+    );
+  } catch (error) {
+    socketLogger.error(
+      { error, projectId, attachmentId },
+      'Failed to broadcast attachment:deleted'
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Comment Broadcast Functions
+// -----------------------------------------------------------------------------
+
+/**
+ * Broadcast when a comment is created.
+ */
+export function broadcastCommentCreated(
+  projectId: string,
+  comment: LiveComment,
+  userId: string
+): void {
+  try {
+    const io = getIO();
+    io.to(getProjectRoom(projectId)).emit('comment:created', {
+      comment,
+      meta: createMeta(userId),
+    });
+    socketLogger.debug(
+      { projectId, commentId: comment.id, userId },
+      'Broadcast comment:created'
+    );
+  } catch (error) {
+    socketLogger.error(
+      { error, projectId, commentId: comment.id },
+      'Failed to broadcast comment:created'
+    );
+  }
+}
+
+/**
+ * Broadcast when a comment is updated.
+ */
+export function broadcastCommentUpdated(
+  projectId: string,
+  comment: LiveComment,
+  userId: string
+): void {
+  try {
+    const io = getIO();
+    io.to(getProjectRoom(projectId)).emit('comment:updated', {
+      comment,
+      meta: createMeta(userId),
+    });
+    socketLogger.debug(
+      { projectId, commentId: comment.id, userId },
+      'Broadcast comment:updated'
+    );
+  } catch (error) {
+    socketLogger.error(
+      { error, projectId, commentId: comment.id },
+      'Failed to broadcast comment:updated'
+    );
+  }
+}
+
+/**
+ * Broadcast when a comment is deleted.
+ */
+export function broadcastCommentDeleted(
+  projectId: string,
+  commentId: string,
+  taskId: string,
+  userId: string
+): void {
+  try {
+    const io = getIO();
+    io.to(getProjectRoom(projectId)).emit('comment:deleted', {
+      commentId,
+      taskId,
+      projectId,
+      meta: createMeta(userId),
+    });
+    socketLogger.debug(
+      { projectId, commentId, taskId, userId },
+      'Broadcast comment:deleted'
+    );
+  } catch (error) {
+    socketLogger.error(
+      { error, projectId, commentId },
+      'Failed to broadcast comment:deleted'
     );
   }
 }

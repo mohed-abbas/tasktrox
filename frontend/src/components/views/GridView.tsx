@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Clock, MessageSquare } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PriorityBadge } from '@/components/task/PrioritySelector';
 import { LabelBadge } from '@/components/labels';
@@ -80,7 +80,7 @@ interface TaskCardProps {
   index: number;
 }
 
-function TaskCard({ task, column, onClick, index }: TaskCardProps) {
+function TaskCard({ task, column, onClick }: TaskCardProps) {
   const dueDateText = formatDueDate(task.dueDate);
   const dueDateUrgency = getDueDateUrgency(task.dueDate);
 
@@ -175,7 +175,7 @@ function TaskCard({ task, column, onClick, index }: TaskCardProps) {
 
 export function GridView({
   columns,
-  projectId,
+  projectId: _projectId,
   isLoading = false,
   onTaskClick,
 }: GridViewProps) {

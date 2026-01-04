@@ -62,14 +62,6 @@ export function AssigneeSelector({
     [assignedIds, onAdd, onRemove]
   );
 
-  const handleRemove = useCallback(
-    (e: React.MouseEvent, userId: string) => {
-      e.stopPropagation();
-      onRemove(userId);
-    },
-    [onRemove]
-  );
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

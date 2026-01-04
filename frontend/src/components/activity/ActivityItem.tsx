@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import type { Activity } from '@/lib/api/activities';
+import type { ReactNode } from 'react';
 import {
   CheckCircle2,
   Circle,
@@ -27,7 +28,7 @@ export interface ActivityItemProps {
  * Get activity action details including icon and description.
  */
 function getActivityDetails(activity: Activity): {
-  icon: JSX.Element;
+  icon: ReactNode;
   description: string;
   color: string;
 } {

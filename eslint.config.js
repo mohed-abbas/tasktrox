@@ -27,6 +27,9 @@ export default [
         ...globals.browser,
         ...globals.node,
         JSX: 'readonly',
+        React: 'readonly',
+        Express: 'readonly',
+        NodeJS: 'readonly',
       },
     },
     plugins: {

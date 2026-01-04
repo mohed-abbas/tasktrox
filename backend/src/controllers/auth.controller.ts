@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { AuthService } from '../services/auth.service.js';
+import { EmailService } from '../services/email.service.js';
 import { redis } from '../config/redis.js';
 import { env } from '../config/env.js';
 import type {
@@ -26,7 +27,7 @@ const REFRESH_TOKEN_COOKIE_OPTIONS = {
 
 // Sanitize user object (remove password)
 function sanitizeUser(user: { password?: string | null; [key: string]: unknown }) {
-  const { password, ...safeUser } = user;
+  const { password: _password, ...safeUser } = user;
   return safeUser;
 }
 
@@ -188,12 +189,18 @@ export class AuthController {
     try {
       const { email } = req.body as ForgotPasswordInput;
 
-      // Generate reset token (will be used when email service is implemented)
-      // TODO: Implement email service to send actual reset link (Phase 5+)
-      await AuthService.generatePasswordResetToken(email);
+      // Generate reset token
+      const resetToken = await AuthService.generatePasswordResetToken(email);
+
+      // Send password reset email if token was generated (user exists)
+      if (resetToken) {
+        // Fire and forget - don't await to prevent timing attacks
+        EmailService.sendPasswordResetEmail(email, resetToken).catch(() => {
+          // Silent fail - email errors should not be exposed
+        });
+      }
 
       // Always return success to prevent email enumeration
-
       res.json({
         success: true,
         data: {

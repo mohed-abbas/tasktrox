@@ -87,7 +87,7 @@ export function ColumnHeader({
   taskCount,
   projectId,
   onNameChange,
-  onEdit,
+  onEdit: _onEdit,
   onDelete,
   isEditable = true,
   className,

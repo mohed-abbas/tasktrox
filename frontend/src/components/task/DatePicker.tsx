@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { format, isToday, isTomorrow, isPast, addDays, isWithinInterval } from 'date-fns';
+import { format, isToday, isTomorrow, addDays, isWithinInterval } from 'date-fns';
 import { Calendar as CalendarIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -168,7 +168,7 @@ export function DatePicker({
               selected={value || undefined}
               onSelect={handleSelect}
               initialFocus
-              disabled={(date) => {
+              disabled={(_date) => {
                 // Optionally disable past dates
                 // return isPast(date) && !isToday(date);
                 return false;

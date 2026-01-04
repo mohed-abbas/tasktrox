@@ -4,7 +4,9 @@ import type { User } from '@prisma/client';
 
 // Extend Express Request to include user
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     interface User extends Omit<import('@prisma/client').User, 'password'> {}
   }
 }
@@ -33,8 +35,8 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
       }
 
       // Remove password from user object
-      const { password, ...safeUser } = user;
-      req.user = safeUser as Express.User;
+      const { password: _password, ...safeUser } = user;
+      req.user = safeUser;
       next();
     }
   )(req, res, next);
@@ -51,8 +53,8 @@ export const optionalAuth = (req: Request, res: Response, next: NextFunction) =>
       }
 
       if (user) {
-        const { password, ...safeUser } = user;
-        req.user = safeUser as Express.User;
+        const { password: _password, ...safeUser } = user;
+        req.user = safeUser;
       }
 
       next();

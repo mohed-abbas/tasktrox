@@ -2,6 +2,7 @@ import { prisma } from '../config/database.js';
 import type { Column, Task } from '@prisma/client';
 import type { CreateColumnInput, UpdateColumnInput } from '../validators/column.validator.js';
 import { ProjectService } from './project.service.js';
+import { projectCache } from './cache.service.js';
 
 type ColumnWithTasks = Column & {
   tasks?: Task[];
@@ -132,6 +133,9 @@ export class ColumnService {
       },
     });
 
+    // Invalidate project cache so fresh column data is returned
+    await projectCache.invalidateProject(projectId);
+
     return column;
   }
 
@@ -180,6 +184,9 @@ export class ColumnService {
         },
       },
     });
+
+    // Invalidate project cache so fresh column data is returned
+    await projectCache.invalidateProject(column.projectId);
 
     return updatedColumn;
   }
@@ -268,6 +275,9 @@ export class ColumnService {
     // Reorder remaining columns to close the gap
     await this.reorderColumnsAfterDelete(column.projectId, column.order);
 
+    // Invalidate project cache so fresh column data is returned
+    await projectCache.invalidateProject(column.projectId);
+
     return { success: true };
   }
 
@@ -347,6 +357,9 @@ export class ColumnService {
         data: { order: newOrder },
       });
     });
+
+    // Invalidate project cache so fresh column data is returned
+    await projectCache.invalidateProject(column.projectId);
 
     return prisma.column.findUnique({
       where: { id: columnId },

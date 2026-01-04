@@ -7,7 +7,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useDroppable } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
 import type { Task } from './Board';
-import { ColumnHeader, columnHeaderConfig } from './ColumnHeader';
+import { ColumnHeader } from './ColumnHeader';
 import { SortableTaskCard } from './SortableTaskCard';
 import { AddTaskForm } from './AddTaskForm';
 
@@ -16,8 +16,8 @@ interface SortableColumnProps {
   name: string;
   tasks: Task[];
   taskCount?: number;
+  projectId?: string;
   onAddTask?: (title: string) => void;
-  onEditColumn?: () => void;
   onDeleteColumn?: () => void;
   onNameChange?: (newName: string) => void;
   onTaskClick?: (task: Task) => void;
@@ -31,8 +31,8 @@ export function SortableColumn({
   name,
   tasks,
   taskCount,
+  projectId,
   onAddTask,
-  onEditColumn,
   onDeleteColumn,
   onNameChange,
   onTaskClick,
@@ -111,8 +111,8 @@ export function SortableColumn({
           id={id}
           name={name}
           taskCount={count}
+          projectId={projectId}
           onNameChange={onNameChange}
-          onEdit={onEditColumn}
           onDelete={onDeleteColumn}
           isEditable={isEditable}
         />

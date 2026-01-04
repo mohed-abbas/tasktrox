@@ -233,12 +233,51 @@ export interface ServerToClientEvents {
    * @param data - The activity data with metadata
    */
   'activity:logged': (data: { activity: LiveActivity; meta: LiveUpdateMeta }) => void;
+
+  // -------------------------------------------------------------------------
+  // Attachment Live Update Events
+  // -------------------------------------------------------------------------
+
+  /**
+   * Broadcast when a new attachment is uploaded.
+   * @param data - The attachment data with metadata
+   */
+  'attachment:uploaded': (data: { attachment: LiveAttachment; meta: LiveUpdateMeta }) => void;
+
+  /**
+   * Broadcast when an attachment is deleted.
+   * @param data - The deleted attachment ID and metadata
+   */
+  'attachment:deleted': (data: { attachmentId: string; taskId: string; projectId: string; meta: LiveUpdateMeta }) => void;
+
+  // -------------------------------------------------------------------------
+  // Comment Live Update Events
+  // -------------------------------------------------------------------------
+
+  /**
+   * Broadcast when a new comment is created.
+   * @param data - The comment data with metadata
+   */
+  'comment:created': (data: { comment: LiveComment; meta: LiveUpdateMeta }) => void;
+
+  /**
+   * Broadcast when a comment is updated.
+   * @param data - The updated comment data with metadata
+   */
+  'comment:updated': (data: { comment: LiveComment; meta: LiveUpdateMeta }) => void;
+
+  /**
+   * Broadcast when a comment is deleted.
+   * @param data - The deleted comment ID and metadata
+   */
+  'comment:deleted': (data: { commentId: string; taskId: string; projectId: string; meta: LiveUpdateMeta }) => void;
 }
 
 /**
  * Events for server-to-server communication.
  * Reserved for future horizontal scaling with multiple Socket.io servers.
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface InterServerEvents {
   // Empty for now - will be used for multi-server presence sync
 }
@@ -321,6 +360,45 @@ export interface LiveActivity {
     id: string;
     title: string;
   } | null;
+}
+
+/**
+ * Attachment data broadcast for live updates.
+ * Matches the shape returned by AttachmentService methods.
+ */
+export interface LiveAttachment {
+  id: string;
+  filename: string;
+  originalName: string;
+  url: string;
+  size: number;
+  mimeType: string;
+  taskId: string;
+  uploadedById: string;
+  createdAt: string;
+  uploadedBy: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
+}
+
+/**
+ * Comment data broadcast for live updates.
+ * Matches the shape returned by CommentService methods.
+ */
+export interface LiveComment {
+  id: string;
+  content: string;
+  taskId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
 }
 
 /**

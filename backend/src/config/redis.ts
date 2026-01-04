@@ -20,3 +20,17 @@ redis.on('connect', () => {
 redis.on('error', (err) => {
   redisLogger.error({ err }, 'Redis connection error');
 });
+
+// Cache keys
+export const CACHE_KEYS = {
+  USER_STATS: 'stats:user',
+  PROJECT_STATS: 'stats:project',
+  PRESENCE: 'presence',
+} as const;
+
+// Cache TTL in seconds
+export const CACHE_TTL = {
+  USER_STATS: 300, // 5 minutes
+  PROJECT_STATS: 120, // 2 minutes
+  PRESENCE: 30, // 30 seconds
+} as const;

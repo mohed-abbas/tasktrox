@@ -131,11 +131,64 @@ export interface PaginationOptions {
   offset?: number;
 }
 
+/**
+ * Actions that should be deduplicated when occurring rapidly
+ * (e.g., multiple task.updated from typing with pauses)
+ */
+const DEDUPE_ACTIONS: Set<ActivityActionType> = new Set([
+  ActivityAction.TASK_UPDATED,
+  ActivityAction.TASK_REORDERED,
+]);
+
+/**
+ * Time window for deduplication (in milliseconds)
+ * Activities within this window are coalesced into one
+ */
+const DEDUPE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+
 export class ActivityService {
   /**
-   * Log an activity
+   * Log an activity with automatic deduplication for rapid updates.
+   * For certain actions (like task.updated), if a similar activity exists
+   * within the deduplication window, it will be updated instead of creating a new one.
    */
   static async log(input: LogActivityInput): Promise<Activity> {
+    // Check if this action type should be deduplicated
+    if (DEDUPE_ACTIONS.has(input.action) && input.taskId) {
+      const dedupeThreshold = new Date(Date.now() - DEDUPE_WINDOW_MS);
+
+      // Look for a recent similar activity
+      const existingActivity = await prisma.activity.findFirst({
+        where: {
+          action: input.action,
+          projectId: input.projectId,
+          userId: input.userId,
+          taskId: input.taskId,
+          createdAt: { gte: dedupeThreshold },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (existingActivity) {
+        // Update the existing activity with new metadata and refresh timestamp
+        const mergedMetadata = {
+          ...(existingActivity.metadata as Prisma.JsonObject ?? {}),
+          ...(input.metadata as Prisma.JsonObject ?? {}),
+        };
+
+        const updatedActivity = await prisma.activity.update({
+          where: { id: existingActivity.id },
+          data: {
+            metadata: mergedMetadata,
+            createdAt: new Date(), // Refresh timestamp to show latest update time
+          },
+        });
+
+        return updatedActivity;
+      }
+    }
+
+    // Create new activity (either not deduplicatable or no recent similar activity)
     const activity = await prisma.activity.create({
       data: {
         action: input.action,

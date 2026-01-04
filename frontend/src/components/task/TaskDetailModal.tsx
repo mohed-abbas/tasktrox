@@ -17,8 +17,11 @@ import { SaveIndicator } from './SaveIndicator';
 import { LabelSelector, LabelBadge } from '@/components/labels';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useAssignees } from '@/hooks/useAssignees';
+import { useAttachments } from '@/hooks/useAttachments';
 import { usePresence } from '@/hooks/usePresence';
 import { PresenceIndicator } from '@/components/presence/PresenceIndicator';
+import { CommentSection } from '@/components/comment';
+import { AttachmentUploader, AttachmentList } from '@/components/attachment';
 import type { Task } from '@/lib/api/tasks';
 import type { Label } from '@/lib/api/labels';
 
@@ -41,12 +44,10 @@ const modalVariants = {
   hidden: {
     opacity: 0,
     scale: 0.95,
-    y: 10,
   },
   visible: {
     opacity: 1,
     scale: 1,
-    y: 0,
     transition: {
       type: 'spring',
       damping: 25,
@@ -56,7 +57,6 @@ const modalVariants = {
   exit: {
     opacity: 0,
     scale: 0.95,
-    y: 10,
     transition: {
       duration: 0.15,
       ease: 'easeOut',
@@ -141,6 +141,26 @@ export function TaskDetailModal({
     taskId: task?.id,
     enabled: open && !!projectId && !!task?.id,
   });
+
+  // Attachments hook
+  const {
+    attachments,
+    isLoading: isAttachmentsLoading,
+    uploadAsync,
+    isUploading,
+    uploadError,
+    deleteAttachment,
+    deletingId,
+  } = useAttachments({
+    projectId: projectId || '',
+    taskId: task?.id || '',
+    enabled: open && !!projectId && !!task?.id,
+  });
+
+  // Wrapper for upload to handle the async properly
+  const handleUploadAttachment = useCallback(async (file: File) => {
+    await uploadAsync(file);
+  }, [uploadAsync]);
 
   // Presence hooks for real-time editing indicators
   const titlePresence = usePresence({
@@ -290,36 +310,33 @@ export function TaskDetailModal({
   return (
     <AnimatePresence mode="wait">
       {open && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]"
+        /* Backdrop with flexbox centering */
+        <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
             transition={{ duration: 0.2 }}
             onClick={handleBackdropClick}
-            aria-hidden="true"
-          />
-
-          {/* Modal */}
-          <motion.div
-            className={cn(
-              'fixed left-[50%] top-[50%] z-50 w-full max-w-2xl max-h-[90vh]',
-              'bg-white rounded-xl shadow-modal border border-gray-200',
-              'overflow-hidden',
-              'focus:outline-none'
-            )}
-            style={{ x: '-50%', y: '-50%' }}
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="task-modal-title"
           >
+            {/* Modal */}
+            <motion.div
+              className={cn(
+                'w-full max-w-2xl max-h-[90vh]',
+                'bg-white rounded-xl shadow-modal border border-gray-200',
+                'overflow-hidden',
+                'focus:outline-none'
+              )}
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="task-modal-title"
+              onClick={(e) => e.stopPropagation()}
+            >
             {/* Loading State */}
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
@@ -353,11 +370,9 @@ export function TaskDetailModal({
                         onChange={(e) => handleTitleChange(e.target.value)}
                         onKeyDown={handleTitleKeyDown}
                         onFocus={titlePresence.startEditing}
-                        onBlur={(e) => {
+                        onBlur={() => {
                           // Stop presence tracking
                           titlePresence.stopEditing();
-                          // Handle escape key reset behavior from handleTitleKeyDown
-                          // (blur is also triggered by Enter key in handleTitleKeyDown)
                         }}
                         disabled={readOnly}
                         className={cn(
@@ -581,6 +596,43 @@ export function TaskDetailModal({
                     </motion.div>
                   )}
 
+                  {/* Attachments Section */}
+                  {projectId && task && (
+                    <motion.div variants={itemVariants} className="space-y-3">
+                      <label className="text-sm font-medium text-gray-700">
+                        Attachments
+                      </label>
+
+                      {/* Attachment uploader - hide when read-only */}
+                      {!readOnly && (
+                        <AttachmentUploader
+                          onUpload={handleUploadAttachment}
+                          isUploading={isUploading}
+                          error={uploadError}
+                          maxSizeMB={10}
+                        />
+                      )}
+
+                      {/* Attachment list */}
+                      <AttachmentList
+                        attachments={attachments}
+                        isLoading={isAttachmentsLoading}
+                        onDelete={readOnly ? undefined : deleteAttachment}
+                        deletingId={deletingId}
+                      />
+                    </motion.div>
+                  )}
+
+                  {/* Comments Section */}
+                  {projectId && task && (
+                    <motion.div variants={itemVariants} className="pt-4 border-t border-gray-100">
+                      <CommentSection
+                        projectId={projectId}
+                        taskId={task.id}
+                      />
+                    </motion.div>
+                  )}
+
                   {/* Metadata Footer */}
                   <motion.div
                     variants={itemVariants}
@@ -616,8 +668,8 @@ export function TaskDetailModal({
                 Task not found
               </motion.div>
             )}
+            </motion.div>
           </motion.div>
-        </>
       )}
     </AnimatePresence>
   );

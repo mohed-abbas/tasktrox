@@ -149,8 +149,9 @@ export function Board({
             id={column.id}
             name={column.name}
             tasks={column.tasks || []}
+            projectId={projectId}
             onAddTask={readOnly ? undefined : (title) => onAddTask?.(column.id, title)}
-            onEditColumn={readOnly ? undefined : () => onEditColumn?.(column.id, column.name)}
+            onNameChange={readOnly ? undefined : (newName) => onEditColumn?.(column.id, newName)}
             onDeleteColumn={readOnly ? undefined : () => onDeleteColumn?.(column.id)}
             onTaskClick={onTaskClick}
             isDraggingTask={activeItem?.type === 'task'}
