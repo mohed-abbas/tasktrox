@@ -41,6 +41,27 @@ router.post(
 );
 
 /**
+ * PATCH /projects/:projectId/columns/:columnId
+ * Update a column (project-scoped route)
+ */
+router.patch(
+  '/projects/:projectId/columns/:columnId',
+  validate(updateColumnSchema),
+  ColumnController.update
+);
+
+/**
+ * DELETE /projects/:projectId/columns/:columnId
+ * Delete a column (project-scoped route)
+ * Query: ?moveTasksTo=<columnId> to move tasks before deletion
+ */
+router.delete(
+  '/projects/:projectId/columns/:columnId',
+  validate(deleteColumnSchema),
+  ColumnController.delete
+);
+
+/**
  * PATCH /projects/:projectId/columns/:columnId/reorder
  * Reorder a column within a project (project-scoped route)
  */
@@ -50,8 +71,8 @@ router.patch(
   ColumnController.reorderInProject
 );
 
-// ============ COLUMN-SPECIFIC ROUTES ============
-// These operate on individual columns by ID
+// ============ COLUMN-SPECIFIC ROUTES (Legacy/Direct Access) ============
+// These operate on individual columns by ID without project scope
 
 /**
  * GET /columns/:columnId
@@ -61,20 +82,20 @@ router.get('/columns/:columnId', validate(deleteColumnSchema), ColumnController.
 
 /**
  * PATCH /columns/:columnId
- * Update a column
+ * Update a column (legacy route - prefer project-scoped version)
  */
 router.patch('/columns/:columnId', validate(updateColumnSchema), ColumnController.update);
 
 /**
  * DELETE /columns/:columnId
- * Delete a column
+ * Delete a column (legacy route - prefer project-scoped version)
  * Query: ?moveTasksTo=<columnId> to move tasks before deletion
  */
 router.delete('/columns/:columnId', validate(deleteColumnSchema), ColumnController.delete);
 
 /**
  * PATCH /columns/:columnId/reorder
- * Reorder a column within its project
+ * Reorder a column within its project (legacy route)
  */
 router.patch(
   '/columns/:columnId/reorder',
