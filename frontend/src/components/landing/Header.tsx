@@ -6,6 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
 import { headerNavLinks, headerCTA } from '@/data/navigation/header';
+import {
+  mobileMenuVariants,
+  mobileMenuItemVariants,
+} from '@/lib/animations';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -58,31 +62,40 @@ export function Header() {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="lg:hidden bg-white border-t border-gray-100"
+            variants={mobileMenuVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="lg:hidden bg-white border-t border-gray-100 overflow-hidden"
           >
-            <div className="px-6 py-4 space-y-3">
+            <motion.div
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ staggerChildren: 0.05, delayChildren: 0.1 }}
+              className="px-6 py-4 space-y-3"
+            >
               {headerNavLinks.map((link) => (
+                <motion.div key={link.label} variants={mobileMenuItemVariants}>
+                  <Link
+                    href={link.href}
+                    className="block text-gray-600 hover:text-gray-900 text-base font-medium py-2 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+              <motion.div variants={mobileMenuItemVariants}>
                 <Link
-                  key={link.label}
-                  href={link.href}
-                  className="block text-gray-600 hover:text-gray-900 text-base font-medium py-2"
+                  href={headerCTA.href}
+                  className="block w-full text-center bg-gray-800 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors mt-4"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  {link.label}
+                  {headerCTA.text}
                 </Link>
-              ))}
-              <Link
-                href={headerCTA.href}
-                className="block w-full text-center bg-gray-800 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors mt-4"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {headerCTA.text}
-              </Link>
-            </div>
+              </motion.div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

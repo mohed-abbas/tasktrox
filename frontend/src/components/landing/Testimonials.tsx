@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { TestimonialCard, VideoTestimonialCard } from './testimonials/index';
 import { testimonialsSection } from '@/data/landing/testimonials';
+import { easing, scrollViewport } from '@/lib/animations';
 
 // Helper to get testimonial by ID with default fallback
 const getTestimonial = (id: string) => {
@@ -49,19 +50,19 @@ export function Testimonials() {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth }}
             className="text-3xl sm:text-4xl lg:text-[48px] font-medium text-black leading-[1.2] capitalize max-w-[458px]"
           >
             {testimonialsSection.header}
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth, delay: 0.1 }}
             className="text-lg lg:text-xl text-gray-500/70 leading-[1.5] max-w-[494px]"
           >
             {testimonialsSection.description}

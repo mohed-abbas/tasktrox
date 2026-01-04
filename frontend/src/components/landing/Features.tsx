@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { featuresSection } from '@/data/landing/features';
+import { easing, scrollViewport, getStaggerDelay } from '@/lib/animations';
 
 // Map feature IDs to preview types
 const previewMap: Record<string, string> = {
@@ -18,19 +19,19 @@ export function Features() {
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8 mb-12 lg:mb-[60px]">
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth }}
             className="text-3xl lg:text-[48px] font-medium text-black leading-[1.2] lg:w-[458px] capitalize"
           >
             {featuresSection.header}
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth, delay: 0.1 }}
             className="text-base lg:text-xl text-[rgba(68,69,78,0.7)] leading-[1.5] lg:w-[494px]"
           >
             {featuresSection.description}
@@ -44,10 +45,10 @@ export function Features() {
             return (
               <motion.div
                 key={feature.id}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.15 }}
+                viewport={scrollViewport}
+                transition={{ duration: 0.7, ease: easing.smooth, delay: getStaggerDelay(index, 0.1, 0.12) }}
                 className="w-full md:w-[calc(50%-12px)] lg:w-[385px] lg:flex-shrink-0"
               >
                 <div className="bg-white rounded-xl overflow-hidden border border-gray-200">

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Calendar, Paperclip } from 'lucide-react';
 import Image from 'next/image';
+import { easing, scrollViewport } from '@/lib/animations';
 
 const tags = [
   { label: 'UI/UX', bgColor: 'bg-green-50', textColor: 'text-emerald-500' },
@@ -90,10 +91,10 @@ export function FloatingTaskCard({ variant = 'floating' }: FloatingTaskCardProps
   if (isFloating) {
     return (
       <motion.div
-        initial={{ opacity: 0, x: -30, y: 20 }}
+        initial={{ opacity: 0, x: -40, y: 30 }}
         whileInView={{ opacity: 1, x: 0, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.3 }}
+        viewport={scrollViewport}
+        transition={{ duration: 0.8, ease: easing.smooth, delay: 0.3 }}
         className="absolute left-0 top-[80px] z-10 w-[280px]"
       >
         {content}
@@ -103,10 +104,10 @@ export function FloatingTaskCard({ variant = 'floating' }: FloatingTaskCardProps
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.1 }}
+      viewport={scrollViewport}
+      transition={{ duration: 0.7, ease: easing.smooth, delay: 0.1 }}
     >
       {content}
     </motion.div>

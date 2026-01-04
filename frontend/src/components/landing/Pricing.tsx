@@ -5,16 +5,17 @@ import Link from 'next/link';
 import { PricingCheckIcon } from '@/components/icons';
 import { pricingSection } from '@/data/landing/pricing';
 import type { PricingPlan } from '@/data/types';
+import { easing, scrollViewport, getStaggerDelay } from '@/lib/animations';
 
 function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
   const isHighlighted = plan.highlighted;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.15 }}
+      viewport={scrollViewport}
+      transition={{ duration: 0.7, ease: easing.smooth, delay: getStaggerDelay(index, 0.1, 0.12) }}
       className={`relative flex flex-col gap-6 bg-white rounded-2xl p-6 ${
         isHighlighted
           ? 'border-[1.5px] border-[#0048ad] shadow-pricing-pro'
@@ -110,19 +111,19 @@ export function Pricing() {
         {/* Section Header */}
         <div className="flex flex-col items-center gap-6 text-center mb-[67px]">
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth }}
             className="text-4xl lg:text-[48px] font-medium text-black leading-[1.2] capitalize max-w-[458px]"
           >
             {pricingSection.header}
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth, delay: 0.1 }}
             className="text-lg lg:text-xl text-black/70 leading-[1.5] max-w-[560px]"
           >
             {pricingSection.description}

@@ -13,7 +13,7 @@ export const heroContent: HeroContent = {
     "Tasktrox helps you manage daily tasks, assign teammates, and track progress — all in a simple, fast, and visual workspace.",
   cta: {
     primary: { text: "Get Started", href: "/signup" },
-    secondary: { text: "View Demo", href: "/demo" },
+    secondary: { text: "View Demo", href: "#product-showcase" },
   },
   floatingElements: {
     taskCard: {
