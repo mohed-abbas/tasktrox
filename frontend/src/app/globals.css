@@ -91,6 +91,10 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-page text-body;
     font-feature-settings:

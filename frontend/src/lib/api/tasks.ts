@@ -10,6 +10,7 @@ export interface Task {
   projectId: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   dueDate: string | null;
+  completedAt: string | null;
   createdAt: string;
   updatedAt: string;
   labels?: { id: string; name: string; color: string }[];
@@ -31,6 +32,7 @@ export interface UpdateTaskInput {
   description?: string;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   dueDate?: string | null;
+  completed?: boolean;
 }
 
 export interface MoveTaskInput {

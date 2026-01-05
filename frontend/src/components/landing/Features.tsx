@@ -2,27 +2,15 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { featuresSection } from '@/data/landing/features';
+import { easing, scrollViewport, getStaggerDelay } from '@/lib/animations';
 
-const features = [
-  {
-    title: 'Plan With Precision',
-    description:
-      'Turn ideas into actionable tasks with clear deadlines, priorities, and team ownership.',
-    preview: 'task-card',
-  },
-  {
-    title: 'Collaborate Without Chaos',
-    description:
-      'Easily invite teammates, assign tasks, and stay aligned — whether remote or in-office.',
-    preview: 'invite-card',
-  },
-  {
-    title: 'Track What Matters',
-    description:
-      'Stay in control with a real-time view of progress across all task stages.',
-    preview: 'progress-card',
-  },
-];
+// Map feature IDs to preview types
+const previewMap: Record<string, string> = {
+  precision: 'task-card',
+  collaborate: 'invite-card',
+  track: 'progress-card',
+};
 
 export function Features() {
   return (
@@ -31,57 +19,59 @@ export function Features() {
         {/* Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8 mb-12 lg:mb-[60px]">
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth }}
             className="text-3xl lg:text-[48px] font-medium text-black leading-[1.2] lg:w-[458px] capitalize"
           >
-            Why Teams Love Using Tasktrox
+            {featuresSection.header}
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth, delay: 0.1 }}
             className="text-base lg:text-xl text-[rgba(68,69,78,0.7)] leading-[1.5] lg:w-[494px]"
           >
-            Discover how Tasktrox simplifies team collaboration, boosts
-            productivity, and helps you stay on top of every task — every day.
+            {featuresSection.description}
           </motion.p>
         </div>
 
         {/* Feature Cards */}
         <div className="flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap gap-6 lg:gap-[43px] justify-center lg:justify-start">
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.15 }}
-              className="w-full md:w-[calc(50%-12px)] lg:w-[385px] lg:flex-shrink-0"
-            >
-              <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
-                {/* Preview Area */}
-                <div className="h-[260px] bg-[#ECEEF7] relative flex items-center justify-center">
-                  {feature.preview === 'task-card' && <TaskCardPreview />}
-                  {feature.preview === 'invite-card' && <InviteCardPreview />}
-                  {feature.preview === 'progress-card' && <ProjectProgressPreview />}
-                </div>
+          {featuresSection.features.map((feature, index) => {
+            const previewType = previewMap[feature.id] || 'task-card';
+            return (
+              <motion.div
+                key={feature.id}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={scrollViewport}
+                transition={{ duration: 0.7, ease: easing.smooth, delay: getStaggerDelay(index, 0.1, 0.12) }}
+                className="w-full md:w-[calc(50%-12px)] lg:w-[385px] lg:flex-shrink-0"
+              >
+                <div className="bg-white rounded-xl overflow-hidden border border-gray-200">
+                  {/* Preview Area */}
+                  <div className="h-[260px] bg-[#ECEEF7] relative flex items-center justify-center">
+                    {previewType === 'task-card' && <TaskCardPreview />}
+                    {previewType === 'invite-card' && <InviteCardPreview />}
+                    {previewType === 'progress-card' && <ProjectProgressPreview />}
+                  </div>
 
-                {/* Content */}
-                <div className="p-4 flex flex-col gap-[9px]">
-                  <h3 className="text-2xl font-medium text-black leading-[1.2] capitalize">
-                    {feature.title}
-                  </h3>
-                  <p className="text-base text-[rgba(68,69,78,0.7)] leading-[1.5]">
-                    {feature.description}
-                  </p>
+                  {/* Content */}
+                  <div className="p-4 flex flex-col gap-[9px]">
+                    <h3 className="text-2xl font-medium text-black leading-[1.2] capitalize">
+                      {feature.title}
+                    </h3>
+                    <p className="text-base text-[rgba(68,69,78,0.7)] leading-[1.5]">
+                      {feature.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

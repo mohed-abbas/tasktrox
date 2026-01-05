@@ -43,9 +43,6 @@ export { useFilters } from './useFilters';
 // Projects operations hook
 export { useProjects } from './useProjects';
 
-// Auto-save hook with debouncing and status tracking
-export { useAutoSave, type SaveStatus } from './useAutoSave';
-
 // Presence tracking hook for real-time editing indicators
 export { usePresence } from './usePresence';
 export type {

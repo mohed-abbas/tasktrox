@@ -5,14 +5,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
-
-const navLinks = [
-  { label: 'Home', href: '#' },
-  { label: 'Features', href: '#features' },
-  { label: 'Solutions', href: '#solutions' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Resources', href: '#resources' },
-];
+import { headerNavLinks, headerCTA } from '@/data/navigation/header';
+import {
+  mobileMenuVariants,
+  mobileMenuItemVariants,
+} from '@/lib/animations';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -28,7 +25,7 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-10">
-            {navLinks.map((link) => (
+            {headerNavLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
@@ -42,10 +39,10 @@ export function Header() {
           {/* CTA Button */}
           <div className="hidden lg:block">
             <Link
-              href="/login"
+              href={headerCTA.href}
               className="inline-flex items-center justify-center bg-gray-800 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
             >
-              Get Started
+              {headerCTA.text}
             </Link>
           </div>
 
@@ -65,31 +62,40 @@ export function Header() {
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="lg:hidden bg-white border-t border-gray-100"
+            variants={mobileMenuVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="lg:hidden bg-white border-t border-gray-100 overflow-hidden"
           >
-            <div className="px-6 py-4 space-y-3">
-              {navLinks.map((link) => (
+            <motion.div
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ staggerChildren: 0.05, delayChildren: 0.1 }}
+              className="px-6 py-4 space-y-3"
+            >
+              {headerNavLinks.map((link) => (
+                <motion.div key={link.label} variants={mobileMenuItemVariants}>
+                  <Link
+                    href={link.href}
+                    className="block text-gray-600 hover:text-gray-900 text-base font-medium py-2 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+              <motion.div variants={mobileMenuItemVariants}>
                 <Link
-                  key={link.label}
-                  href={link.href}
-                  className="block text-gray-600 hover:text-gray-900 text-base font-medium py-2"
+                  href={headerCTA.href}
+                  className="block w-full text-center bg-gray-800 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors mt-4"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  {link.label}
+                  {headerCTA.text}
                 </Link>
-              ))}
-              <Link
-                href="/login"
-                className="block w-full text-center bg-gray-800 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors mt-4"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Get Started
-              </Link>
-            </div>
+              </motion.div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

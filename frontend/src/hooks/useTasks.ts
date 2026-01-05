@@ -65,6 +65,7 @@ export function useTasks({ projectId }: UseTasksOptions) {
         projectId,
         priority: newTaskData.priority ?? null,
         dueDate: newTaskData.dueDate ?? null,
+        completedAt: null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         labels: [],
@@ -101,11 +102,18 @@ export function useTasks({ projectId }: UseTasksOptions) {
 
       const previousTasks = getTasksData();
 
-      const updatedTasks = previousTasks.map((task) =>
-        task.id === taskId
-          ? { ...task, ...data, updatedAt: new Date().toISOString() }
-          : task
-      );
+      const updatedTasks = previousTasks.map((task) => {
+        if (task.id !== taskId) return task;
+
+        // Handle completed -> completedAt conversion for optimistic update
+        const updates: Partial<Task> = { ...data, updatedAt: new Date().toISOString() };
+        if ('completed' in data) {
+          updates.completedAt = data.completed ? new Date().toISOString() : null;
+          delete (updates as Record<string, unknown>).completed;
+        }
+
+        return { ...task, ...updates };
+      });
 
       queryClient.setQueryData<Task[]>(['tasks', projectId], updatedTasks);
 

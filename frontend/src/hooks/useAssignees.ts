@@ -45,11 +45,34 @@ export function useAssignees({ projectId, taskId, enabled = true }: UseAssignees
     return queryClient.getQueryData<Assignee[]>(['assignees', projectId, taskId]) || [];
   };
 
+  // Helper to update task.assignees in the tasks cache
+  const updateTaskAssigneesCache = (newAssignees: Assignee[]) => {
+    // Map to simpler format used in Task type
+    const taskAssignees = newAssignees.map(a => ({
+      id: a.id,
+      name: a.name,
+      avatar: a.avatar,
+    }));
+
+    // Update the tasks cache so board reflects changes immediately
+    queryClient.setQueryData<{ id: string; assignees?: { id: string; name: string; avatar: string | null }[] }[]>(
+      ['tasks', projectId],
+      (old) => {
+        if (!old) return old;
+        return old.map(task =>
+          task.id === taskId ? { ...task, assignees: taskAssignees } : task
+        );
+      }
+    );
+  };
+
   // Add assignee mutation with optimistic update
   const addAssigneeMutation = useMutation({
     mutationFn: (userId: string) => addAssignee(projectId, taskId!, userId),
     onMutate: async (userId) => {
+      // Cancel any outgoing refetches to prevent overwriting optimistic update
       await queryClient.cancelQueries({ queryKey: ['assignees', projectId, taskId] });
+      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
 
       const previousAssignees = getAssigneesData();
 
@@ -63,25 +86,46 @@ export function useAssignees({ projectId, taskId, enabled = true }: UseAssignees
           assignedAt: new Date().toISOString(),
         };
 
+        const newAssignees = [...previousAssignees, optimisticAssignee];
+
         queryClient.setQueryData<Assignee[]>(
           ['assignees', projectId, taskId],
-          [...previousAssignees, optimisticAssignee]
+          newAssignees
         );
+
+        // Also update the tasks cache for the board
+        updateTaskAssigneesCache(newAssignees);
       }
 
       return { previousAssignees };
     },
+    onSuccess: (newAssignee) => {
+      // Update assignees cache with server response (has correct assignedAt)
+      const currentAssignees = getAssigneesData();
+      // Replace optimistic entry with server response
+      const updatedAssignees = currentAssignees.map(a =>
+        a.id === newAssignee.id ? newAssignee : a
+      );
+      queryClient.setQueryData<Assignee[]>(
+        ['assignees', projectId, taskId],
+        updatedAssignees
+      );
+      // Update tasks cache with authoritative data
+      updateTaskAssigneesCache(updatedAssignees);
+    },
     onError: (err, _userId, context) => {
       if (context?.previousAssignees) {
         queryClient.setQueryData(['assignees', projectId, taskId], context.previousAssignees);
+        // Rollback tasks cache too
+        updateTaskAssigneesCache(context.previousAssignees);
       }
       toast.error('Failed to add assignee', {
         description: err instanceof Error ? err.message : 'Please try again',
       });
     },
+    // Only invalidate assignees cache, NOT tasks - we updated it in onSuccess
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['assignees', projectId, taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
       queryClient.invalidateQueries({ queryKey: ['task', projectId, taskId] });
     },
   });
@@ -90,28 +134,46 @@ export function useAssignees({ projectId, taskId, enabled = true }: UseAssignees
   const removeAssigneeMutation = useMutation({
     mutationFn: (userId: string) => removeAssignee(projectId, taskId!, userId),
     onMutate: async (userId) => {
+      // Cancel any outgoing refetches to prevent overwriting optimistic update
       await queryClient.cancelQueries({ queryKey: ['assignees', projectId, taskId] });
+      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
 
       const previousAssignees = getAssigneesData();
+      const newAssignees = previousAssignees.filter((a) => a.id !== userId);
 
       queryClient.setQueryData<Assignee[]>(
         ['assignees', projectId, taskId],
-        previousAssignees.filter((a) => a.id !== userId)
+        newAssignees
       );
 
-      return { previousAssignees };
+      // Also update the tasks cache for the board
+      updateTaskAssigneesCache(newAssignees);
+
+      return { previousAssignees, newAssignees };
+    },
+    onSuccess: (_result, _userId, context) => {
+      // Server confirmed removal - ensure both caches have the correct state
+      if (context?.newAssignees) {
+        queryClient.setQueryData<Assignee[]>(
+          ['assignees', projectId, taskId],
+          context.newAssignees
+        );
+        updateTaskAssigneesCache(context.newAssignees);
+      }
     },
     onError: (err, _userId, context) => {
       if (context?.previousAssignees) {
         queryClient.setQueryData(['assignees', projectId, taskId], context.previousAssignees);
+        // Rollback tasks cache too
+        updateTaskAssigneesCache(context.previousAssignees);
       }
       toast.error('Failed to remove assignee', {
         description: err instanceof Error ? err.message : 'Please try again',
       });
     },
+    // Only invalidate assignees cache, NOT tasks - we updated it in onSuccess
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['assignees', projectId, taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
       queryClient.invalidateQueries({ queryKey: ['task', projectId, taskId] });
     },
   });
@@ -120,7 +182,9 @@ export function useAssignees({ projectId, taskId, enabled = true }: UseAssignees
   const setAssigneesMutation = useMutation({
     mutationFn: (userIds: string[]) => setTaskAssignees(projectId, taskId!, userIds),
     onMutate: async (userIds) => {
+      // Cancel any outgoing refetches to prevent overwriting optimistic update
       await queryClient.cancelQueries({ queryKey: ['assignees', projectId, taskId] });
+      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
 
       const previousAssignees = getAssigneesData();
 
@@ -136,22 +200,33 @@ export function useAssignees({ projectId, taskId, enabled = true }: UseAssignees
 
       queryClient.setQueryData<Assignee[]>(['assignees', projectId, taskId], optimisticAssignees);
 
+      // Also update the tasks cache for the board
+      updateTaskAssigneesCache(optimisticAssignees);
+
       return { previousAssignees };
+    },
+    onSuccess: (serverAssignees) => {
+      // Update with server response (authoritative data with correct timestamps)
+      queryClient.setQueryData<Assignee[]>(
+        ['assignees', projectId, taskId],
+        serverAssignees
+      );
+      updateTaskAssigneesCache(serverAssignees);
+      toast.success('Assignees updated');
     },
     onError: (err, _userIds, context) => {
       if (context?.previousAssignees) {
         queryClient.setQueryData(['assignees', projectId, taskId], context.previousAssignees);
+        // Rollback tasks cache too
+        updateTaskAssigneesCache(context.previousAssignees);
       }
       toast.error('Failed to update assignees', {
         description: err instanceof Error ? err.message : 'Please try again',
       });
     },
-    onSuccess: () => {
-      toast.success('Assignees updated');
-    },
+    // Only invalidate assignees cache, NOT tasks - we updated it in onSuccess
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['assignees', projectId, taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
       queryClient.invalidateQueries({ queryKey: ['task', projectId, taskId] });
     },
   });

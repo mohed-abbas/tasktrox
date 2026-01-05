@@ -21,20 +21,21 @@ const LABEL_COLORS = [
 ];
 
 // Get label style based on color hex
+// Uses 500 shade for text to match Figma design
 export function getLabelStyles(hexColor: string): { bg: string; text: string } {
   const colorMap: Record<string, { bg: string; text: string }> = {
-    '#8B5CF6': { bg: 'bg-[#F5F3FF]', text: 'text-[#4C1D95]' },
-    '#7C3AED': { bg: 'bg-[#F5F3FF]', text: 'text-[#4C1D95]' },
-    '#10B981': { bg: 'bg-[#ECFDF5]', text: 'text-[#064E3B]' },
-    '#059669': { bg: 'bg-[#ECFDF5]', text: 'text-[#064E3B]' },
-    '#F59E0B': { bg: 'bg-[#FFFBEB]', text: 'text-[#78350F]' },
-    '#D97706': { bg: 'bg-[#FFFBEB]', text: 'text-[#78350F]' },
+    '#8B5CF6': { bg: 'bg-[#F5F3FF]', text: 'text-[#8B5CF6]' },
+    '#7C3AED': { bg: 'bg-[#F5F3FF]', text: 'text-[#8B5CF6]' },
+    '#10B981': { bg: 'bg-[#ECFDF5]', text: 'text-[#10B981]' },
+    '#059669': { bg: 'bg-[#ECFDF5]', text: 'text-[#10B981]' },
+    '#F59E0B': { bg: 'bg-[#FFFBEB]', text: 'text-[#F59E0B]' },
+    '#D97706': { bg: 'bg-[#FFFBEB]', text: 'text-[#F59E0B]' },
     '#3B82F6': { bg: 'bg-[#EFF6FF]', text: 'text-[#3B82F6]' },
     '#2563EB': { bg: 'bg-[#EFF6FF]', text: 'text-[#3B82F6]' },
-    '#EC4899': { bg: 'bg-[#FDF2F8]', text: 'text-[#831843]' },
-    '#DB2777': { bg: 'bg-[#FDF2F8]', text: 'text-[#831843]' },
-    '#EF4444': { bg: 'bg-[#FEF2F2]', text: 'text-[#991B1B]' },
-    '#DC2626': { bg: 'bg-[#FEF2F2]', text: 'text-[#991B1B]' },
+    '#EC4899': { bg: 'bg-[#FDF2F8]', text: 'text-[#EC4899]' },
+    '#DB2777': { bg: 'bg-[#FDF2F8]', text: 'text-[#EC4899]' },
+    '#EF4444': { bg: 'bg-[#FEF2F2]', text: 'text-[#EF4444]' },
+    '#DC2626': { bg: 'bg-[#FEF2F2]', text: 'text-[#EF4444]' },
   };
 
   const normalized = hexColor.toUpperCase();

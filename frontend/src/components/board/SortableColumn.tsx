@@ -5,6 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Task } from './Board';
 import { ColumnHeader } from './ColumnHeader';
@@ -21,6 +22,7 @@ interface SortableColumnProps {
   onDeleteColumn?: () => void;
   onNameChange?: (newName: string) => void;
   onTaskClick?: (task: Task) => void;
+  onToggleComplete?: (taskId: string, completed: boolean) => void;
   isEditable?: boolean;
   isDraggingTask?: boolean;
   className?: string;
@@ -36,6 +38,7 @@ export function SortableColumn({
   onDeleteColumn,
   onNameChange,
   onTaskClick,
+  onToggleComplete,
   isEditable = true,
   isDraggingTask = false,
   className,
@@ -67,11 +70,16 @@ export function SortableColumn({
 
   // Delayed expand state - only expand after hovering for 150ms
   const [isExpandedDropZone, setIsExpandedDropZone] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
+
+  // Split tasks into incomplete and completed
+  const incompleteTasks = tasks.filter(t => !t.completedAt);
+  const completedTasks = tasks.filter(t => t.completedAt);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
-    if (isOver && isDraggingTask && tasks.length === 0) {
+    if (isOver && isDraggingTask && incompleteTasks.length === 0) {
       // Delay before expanding
       timeoutId = setTimeout(() => {
         setIsExpandedDropZone(true);
@@ -84,10 +92,11 @@ export function SortableColumn({
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [isOver, isDraggingTask, tasks.length]);
+  }, [isOver, isDraggingTask, incompleteTasks.length]);
 
-  const count = taskCount ?? tasks.length;
-  const taskIds = tasks.map((task) => task.id);
+  // Show incomplete count in header
+  const count = taskCount ?? incompleteTasks.length;
+  const taskIds = incompleteTasks.map((task) => task.id);
 
   const columnStyle = {
     transform: CSS.Transform.toString(transform),
@@ -131,11 +140,12 @@ export function SortableColumn({
         )}
       >
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
-          {tasks.map((task) => (
+          {incompleteTasks.map((task) => (
             <SortableTaskCard
               key={task.id}
               task={task}
               onClick={() => onTaskClick?.(task)}
+              onToggleComplete={onToggleComplete}
             />
           ))}
         </SortableContext>
@@ -153,6 +163,36 @@ export function SortableColumn({
             onSubmit={(title) => onAddTask(title)}
             placeholder={`Add task to ${name}...`}
           />
+        )}
+
+        {/* Completed Tasks Collapsible */}
+        {completedTasks.length > 0 && (
+          <div className="mt-2 border-t border-gray-100 pt-2">
+            <button
+              onClick={() => setShowCompleted(!showCompleted)}
+              className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 w-full transition-colors"
+            >
+              <ChevronRight
+                className={cn(
+                  'size-4 transition-transform duration-200',
+                  showCompleted && 'rotate-90'
+                )}
+              />
+              <span>Show completed ({completedTasks.length})</span>
+            </button>
+            {showCompleted && (
+              <div className="mt-2 space-y-2.5">
+                {completedTasks.map((task) => (
+                  <SortableTaskCard
+                    key={task.id}
+                    task={task}
+                    onClick={() => onTaskClick?.(task)}
+                    onToggleComplete={onToggleComplete}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { easing, scrollViewport, getStaggerDelay } from '@/lib/animations';
 
 export interface VideoTestimonialCardProps {
   author: {
@@ -42,10 +43,10 @@ export function VideoTestimonialCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
+      viewport={scrollViewport}
+      transition={{ duration: 0.7, ease: easing.smooth, delay: getStaggerDelay(index, 0, 0.08) }}
       className={`relative border border-gray-200 rounded-xl overflow-hidden ${className}`}
     >
       {/* Background Image / Video */}

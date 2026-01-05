@@ -12,6 +12,8 @@ export const ActivityAction = {
   TASK_DELETED: 'task.deleted',
   TASK_MOVED: 'task.moved',
   TASK_REORDERED: 'task.reordered',
+  TASK_COMPLETED: 'task.completed',
+  TASK_REOPENED: 'task.reopened',
 
   // Column actions
   COLUMN_CREATED: 'column.created',

@@ -3,78 +3,19 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { PricingCheckIcon } from '@/components/icons';
+import { pricingSection } from '@/data/landing/pricing';
+import type { PricingPlan } from '@/data/types';
+import { easing, scrollViewport, getStaggerDelay } from '@/lib/animations';
 
-interface PlanFeature {
-  text: string;
-}
-
-interface Plan {
-  name: string;
-  description: string;
-  price: string;
-  period: string;
-  features: PlanFeature[];
-  cta: string;
-  highlighted: boolean;
-}
-
-const plans: Plan[] = [
-  {
-    name: 'Starter',
-    description: 'Kickstart your productivity journey',
-    price: '$9',
-    period: 'Per Month',
-    features: [
-      { text: 'Up to 5 team members' },
-      { text: 'Access to all core features' },
-      { text: 'Kanban, List & Grid views' },
-      { text: 'Task labels, due dates, and priorities' },
-      { text: 'Email support' },
-    ],
-    cta: 'Choose Plan',
-    highlighted: false,
-  },
-  {
-    name: 'Pro',
-    description: 'Built for fast-growing teams',
-    price: '$19',
-    period: 'Per Month',
-    features: [
-      { text: 'Up to 25 team members' },
-      { text: 'Recurring tasks & reminders' },
-      { text: 'Shared team boards' },
-      { text: 'Commenting & file attachments' },
-      { text: 'Priority support' },
-    ],
-    cta: 'Choose Plan',
-    highlighted: true,
-  },
-  {
-    name: 'Enterprise',
-    description: 'Customized for large teams & organizations',
-    price: '$999',
-    period: 'Per Month',
-    features: [
-      { text: 'Unlimited members & projects' },
-      { text: 'Advanced admin controls & roles' },
-      { text: 'Dedicated account manager' },
-      { text: 'Custom integrations' },
-      { text: 'SAML/SSO and team analytics' },
-    ],
-    cta: 'Choose Plan',
-    highlighted: false,
-  },
-];
-
-function PricingCard({ plan, index }: { plan: Plan; index: number }) {
+function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
   const isHighlighted = plan.highlighted;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.15 }}
+      viewport={scrollViewport}
+      transition={{ duration: 0.7, ease: easing.smooth, delay: getStaggerDelay(index, 0.1, 0.12) }}
       className={`relative flex flex-col gap-6 bg-white rounded-2xl p-6 ${
         isHighlighted
           ? 'border-[1.5px] border-[#0048ad] shadow-pricing-pro'
@@ -145,7 +86,7 @@ function PricingCard({ plan, index }: { plan: Plan; index: number }) {
       {/* Features Section */}
       <div className="flex flex-col gap-5">
         <p className="text-base font-medium text-gray-900 leading-[1.5]">
-          Includes everything, plus
+          {pricingSection.featurePrefix}
         </p>
 
         <div className="flex flex-col gap-[13px]">
@@ -153,7 +94,7 @@ function PricingCard({ plan, index }: { plan: Plan; index: number }) {
             <div key={featureIndex} className="flex items-center gap-3">
               <PricingCheckIcon size={20} className="shrink-0 text-black" />
               <span className="text-base text-black/70 leading-[1.5]">
-                {feature.text}
+                {feature}
               </span>
             </div>
           ))}
@@ -170,29 +111,29 @@ export function Pricing() {
         {/* Section Header */}
         <div className="flex flex-col items-center gap-6 text-center mb-[67px]">
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth }}
             className="text-4xl lg:text-[48px] font-medium text-black leading-[1.2] capitalize max-w-[458px]"
           >
-            Find the Right Plan for Your Team
+            {pricingSection.header}
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={scrollViewport}
+            transition={{ duration: 0.7, ease: easing.smooth, delay: 0.1 }}
             className="text-lg lg:text-xl text-black/70 leading-[1.5] max-w-[560px]"
           >
-            Choose from flexible plans designed to help teams of all sizes plan, collaborate, and complete work efficiently.
+            {pricingSection.description}
           </motion.p>
         </div>
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-[31px]">
-          {plans.map((plan, index) => (
-            <PricingCard key={plan.name} plan={plan} index={index} />
+          {pricingSection.plans.map((plan, index) => (
+            <PricingCard key={plan.id} plan={plan} index={index} />
           ))}
         </div>
       </div>

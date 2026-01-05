@@ -117,6 +117,7 @@ model Task {
   order       Int
   priority    Priority?
   dueDate     DateTime?
+  completedAt DateTime?
 
   columnId String
   column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
@@ -139,6 +140,7 @@ model Task {
   @@index([columnId, order])
   @@index([createdById])
   @@index([dueDate])
+  @@index([completedAt])
   @@index([deletedAt])
   @@map("tasks")
 }

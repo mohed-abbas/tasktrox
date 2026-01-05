@@ -16,6 +16,12 @@ interface UseAttachmentsOptions {
   enabled?: boolean;
 }
 
+// Minimal task type for cache updates
+interface TaskCacheItem {
+  id: string;
+  _count?: { attachments: number; comments: number };
+}
+
 /**
  * Hook for managing task attachments with optimistic updates
  */
@@ -26,6 +32,28 @@ export function useAttachments({
 }: UseAttachmentsOptions) {
   const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Helper to update attachment count in tasks cache
+  const updateTaskAttachmentCount = (delta: number) => {
+    queryClient.setQueryData<TaskCacheItem[]>(
+      ['tasks', projectId],
+      (old) => {
+        if (!old) return old;
+        return old.map(task => {
+          if (task.id !== taskId) return task;
+          const currentCount = task._count?.attachments ?? 0;
+          return {
+            ...task,
+            _count: {
+              ...task._count,
+              attachments: Math.max(0, currentCount + delta),
+              comments: task._count?.comments ?? 0,
+            },
+          };
+        });
+      }
+    );
+  };
 
   // Query for fetching attachments
   const query = useQuery({
@@ -38,14 +66,20 @@ export function useAttachments({
   // Mutation for uploading an attachment
   const uploadMutation = useMutation({
     mutationFn: (file: File) => uploadAttachment(projectId, taskId, file),
+    onMutate: async () => {
+      // Cancel any outgoing refetches to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
+    },
     onSuccess: (newAttachment) => {
       // Add new attachment to cache
       queryClient.setQueryData<Attachment[]>(
         ['attachments', projectId, taskId],
         (old) => (old ? [newAttachment, ...old] : [newAttachment])
       );
-      // Also invalidate tasks to update attachment count
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+      // Update attachment count in tasks cache directly (no invalidation)
+      updateTaskAttachmentCount(1);
+      // Invalidate single task cache for modal consistency
+      queryClient.invalidateQueries({ queryKey: ['task', projectId, taskId] });
       toast.success('File uploaded successfully');
     },
     onError: (err) => {
@@ -61,14 +95,20 @@ export function useAttachments({
       setDeletingId(attachmentId);
       return deleteAttachment(projectId, attachmentId);
     },
+    onMutate: async () => {
+      // Cancel any outgoing refetches to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
+    },
     onSuccess: (_data, attachmentId) => {
       // Remove attachment from cache
       queryClient.setQueryData<Attachment[]>(
         ['attachments', projectId, taskId],
         (old) => old?.filter((a) => a.id !== attachmentId) ?? []
       );
-      // Also invalidate tasks to update attachment count
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+      // Update attachment count in tasks cache directly (no invalidation)
+      updateTaskAttachmentCount(-1);
+      // Invalidate single task cache for modal consistency
+      queryClient.invalidateQueries({ queryKey: ['task', projectId, taskId] });
       toast.success('Attachment deleted');
     },
     onError: (err) => {

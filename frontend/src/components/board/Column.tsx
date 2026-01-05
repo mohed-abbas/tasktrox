@@ -1,6 +1,7 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Task } from './Board';
 import { ColumnHeader, columnHeaderConfig } from './ColumnHeader';
@@ -20,6 +21,7 @@ export interface ColumnProps {
   onDeleteColumn?: () => void;
   onNameChange?: (newName: string) => void;
   onTaskClick?: (task: Task) => void;
+  onToggleComplete?: (taskId: string, completed: boolean) => void;
   renderTask?: (task: Task) => React.ReactNode;
   isOver?: boolean;
   isDragging?: boolean;
@@ -39,6 +41,7 @@ export const Column = forwardRef<HTMLDivElement, ColumnProps>(
       onDeleteColumn,
       onNameChange,
       onTaskClick,
+      onToggleComplete,
       renderTask,
       isOver = false,
       isDragging = false,
@@ -47,7 +50,14 @@ export const Column = forwardRef<HTMLDivElement, ColumnProps>(
     },
     ref
   ) => {
-    const count = taskCount ?? tasks.length;
+    const [showCompleted, setShowCompleted] = useState(false);
+
+    // Split tasks into incomplete and completed
+    const incompleteTasks = tasks.filter(t => !t.completedAt);
+    const completedTasks = tasks.filter(t => t.completedAt);
+
+    // Show incomplete count in header, not total
+    const count = taskCount ?? incompleteTasks.length;
 
     return (
       <div
@@ -77,8 +87,8 @@ export const Column = forwardRef<HTMLDivElement, ColumnProps>(
             isOver && 'bg-gray-100/50 rounded-xl'
           )}
         >
-          {/* Task Cards */}
-          {tasks.map((task) =>
+          {/* Incomplete Task Cards */}
+          {incompleteTasks.map((task) =>
             renderTask ? (
               renderTask(task)
             ) : (
@@ -86,6 +96,7 @@ export const Column = forwardRef<HTMLDivElement, ColumnProps>(
                 key={task.id}
                 task={task}
                 onClick={() => onTaskClick?.(task)}
+                onToggleComplete={onToggleComplete}
               />
             )
           )}
@@ -95,6 +106,40 @@ export const Column = forwardRef<HTMLDivElement, ColumnProps>(
             onSubmit={(title) => onAddTask?.(title)}
             placeholder={`Add task to ${name}...`}
           />
+
+          {/* Completed Tasks Collapsible */}
+          {completedTasks.length > 0 && (
+            <div className="mt-2 border-t border-gray-100 pt-2">
+              <button
+                onClick={() => setShowCompleted(!showCompleted)}
+                className="flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 w-full transition-colors"
+              >
+                <ChevronRight
+                  className={cn(
+                    'size-4 transition-transform duration-200',
+                    showCompleted && 'rotate-90'
+                  )}
+                />
+                <span>Show completed ({completedTasks.length})</span>
+              </button>
+              {showCompleted && (
+                <div className="mt-2 space-y-2.5">
+                  {completedTasks.map((task) =>
+                    renderTask ? (
+                      renderTask(task)
+                    ) : (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        onClick={() => onTaskClick?.(task)}
+                        onToggleComplete={onToggleComplete}
+                      />
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );

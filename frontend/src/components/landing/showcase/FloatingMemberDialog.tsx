@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import Image from 'next/image';
+import { easing, scrollViewport } from '@/lib/animations';
 
 const members = [
   {
@@ -85,10 +86,10 @@ export function FloatingMemberDialog({ variant = 'floating' }: FloatingMemberDia
   if (isFloating) {
     return (
       <motion.div
-        initial={{ opacity: 0, x: 30, y: 20 }}
+        initial={{ opacity: 0, x: 40, y: 30 }}
         whileInView={{ opacity: 1, x: 0, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.4 }}
+        viewport={scrollViewport}
+        transition={{ duration: 0.8, ease: easing.smooth, delay: 0.4 }}
         className="absolute right-0 top-[260px] z-10 w-[280px]"
       >
         {content}
@@ -98,10 +99,10 @@ export function FloatingMemberDialog({ variant = 'floating' }: FloatingMemberDia
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.3 }}
+      viewport={scrollViewport}
+      transition={{ duration: 0.7, ease: easing.smooth, delay: 0.3 }}
     >
       {content}
     </motion.div>

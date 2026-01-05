@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
+import { easing, scrollViewport } from '@/lib/animations';
 
 interface FloatingProgressCardProps {
   variant?: 'floating' | 'stacked';
@@ -91,10 +92,10 @@ export function FloatingProgressCard({ variant = 'floating' }: FloatingProgressC
   if (isFloating) {
     return (
       <motion.div
-        initial={{ opacity: 0, x: -30, y: -20 }}
+        initial={{ opacity: 0, x: -40, y: -30 }}
         whileInView={{ opacity: 1, x: 0, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.5 }}
+        viewport={scrollViewport}
+        transition={{ duration: 0.8, ease: easing.smooth, delay: 0.5 }}
         className="absolute left-0 bottom-[60px] z-10 w-[280px]"
       >
         {content}
@@ -104,10 +105,10 @@ export function FloatingProgressCard({ variant = 'floating' }: FloatingProgressC
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: 0.2 }}
+      viewport={scrollViewport}
+      transition={{ duration: 0.7, ease: easing.smooth, delay: 0.2 }}
     >
       {content}
     </motion.div>
