@@ -87,6 +87,11 @@ export class UserService {
     userId: string,
     file: MulterFile
   ): Promise<{ avatar: string }> {
+    // Check if storage is properly configured
+    if (!R2_PUBLIC_URL) {
+      throw new Error('File storage is not configured. R2_PUBLIC_URL is required.');
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -115,8 +120,11 @@ export class UserService {
       throw new Error('Failed to upload avatar');
     }
 
-    // Get the URL for the avatar
-    const avatarUrl = getPublicUrl(key) ?? `${R2_PUBLIC_URL}/${key}`;
+    // Get the public URL for the avatar
+    const avatarUrl = getPublicUrl(key);
+    if (!avatarUrl) {
+      throw new Error('Failed to generate avatar URL');
+    }
 
     // Update user
     await prisma.user.update({
