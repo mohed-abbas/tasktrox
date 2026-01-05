@@ -36,7 +36,9 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
     const isCompleted = !!task.completedAt;
     const formattedDate = formatDate(task.dueDate);
     const hasLabels = task.labels && task.labels.length > 0;
-    const hasAttachments = task._count?.attachments && task._count.attachments > 0;
+    // Only show attachments if count is > 0 (never show "0 Files")
+    const attachmentCount = task._count?.attachments ?? 0;
+    const hasAttachments = attachmentCount > 0;
     const hasAssignees = task.assignees && task.assignees.length > 0;
     const hasFooter = hasAttachments || hasAssignees;
 
@@ -99,8 +101,8 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
 
             {/* Title & Description */}
             <div className="flex flex-col gap-[7px]">
-              <h4 className={cn(
-                "text-[19px] font-semibold text-black leading-[24px] pr-6",
+                <h4 className={cn(
+                "text-[19px] font-medium text-black leading-[24px] pr-6",
                 isCompleted && "line-through text-gray-400"
               )}>
                 {task.title}
@@ -141,13 +143,13 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
               <div className="h-px bg-gray-200 w-full" />
 
               <div className="flex items-center justify-between">
-                {/* Attachments Count */}
+                {/* Attachments Count - only shown when > 0 */}
                 <div className="flex items-center gap-1.5">
                   {hasAttachments && (
                     <>
                       <Paperclip className="size-[19px] text-gray-400" strokeWidth={1.5} />
                       <span className="text-xs text-gray-500 leading-normal">
-                        {task._count!.attachments} Files
+                        {attachmentCount} {attachmentCount === 1 ? 'File' : 'Files'}
                       </span>
                     </>
                   )}

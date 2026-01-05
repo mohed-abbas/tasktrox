@@ -10,12 +10,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { DatePicker } from './DatePicker';
 import { PrioritySelector, type Priority } from './PrioritySelector';
 import { AssigneeSelector, AssigneeAvatarStack } from './AssigneeSelector';
-import { SaveIndicator } from './SaveIndicator';
 import { LabelSelector, LabelBadge } from '@/components/labels';
-import { useAutoSave } from '@/hooks/useAutoSave';
 import { useAssignees } from '@/hooks/useAssignees';
 import { useAttachments } from '@/hooks/useAttachments';
 import { usePresence } from '@/hooks/usePresence';
@@ -129,6 +138,8 @@ export function TaskDetailModal({
     dueDate: task?.dueDate ?? null,
   });
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
   // Assignees hook - only enabled when we have projectId and taskId
   const {
@@ -191,37 +202,27 @@ export function TaskDetailModal({
     [task?.title, task?.description, task?.priority, task?.dueDate]
   );
 
-  // Auto-save hook
-  const { status: saveStatus, error: saveError } = useAutoSave({
-    value: editableData,
-    originalValue: originalData,
-    onSave: async (data) => {
-      if (!task || !onUpdate) return;
+  // Change detection - enables/disables save button
+  const hasChanges = useMemo(() => {
+    return (
+      editableData.title !== originalData.title ||
+      editableData.description !== originalData.description ||
+      editableData.priority !== originalData.priority ||
+      editableData.dueDate !== originalData.dueDate
+    );
+  }, [editableData, originalData]);
 
-      // Only send changed fields
-      const changes: Partial<Task> = {};
+  // Validation - title is required
+  const isValid = editableData.title.trim().length > 0;
 
-      if (data.title.trim() && data.title !== originalData.title) {
-        changes.title = data.title.trim();
-      }
-      if (data.description !== originalData.description) {
-        changes.description = data.description;
-      }
-      if (data.priority !== originalData.priority) {
-        changes.priority = data.priority;
-      }
-      if (data.dueDate !== originalData.dueDate) {
-        changes.dueDate = data.dueDate;
-      }
-
-      if (Object.keys(changes).length > 0) {
-        await onUpdate(task.id, changes);
-      }
-    },
-    debounceMs: 500,
-    savedDurationMs: 2000,
-    enabled: open && !!task,
-  });
+  // Handle attempt to close - check for unsaved changes (defined early for useEffect)
+  const handleAttemptClose = useCallback(() => {
+    if (hasChanges && !readOnly) {
+      setShowDiscardDialog(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [hasChanges, readOnly, onOpenChange]);
 
   // Sync local state when task changes
   useEffect(() => {
@@ -239,7 +240,8 @@ export function TaskDetailModal({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) {
-        onOpenChange(false);
+        // Check for unsaved changes before closing
+        handleAttemptClose();
       }
     };
 
@@ -252,7 +254,7 @@ export function TaskDetailModal({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [open, onOpenChange]);
+  }, [open, handleAttemptClose]);
 
   // Update handlers - now just update local state, auto-save handles the rest
   const handleTitleChange = useCallback((value: string) => {
@@ -286,6 +288,68 @@ export function TaskDetailModal({
     }
   };
 
+  // Handle save - validates and submits changes
+  const handleSave = useCallback(async () => {
+    if (!task || !onUpdate || !isValid || !hasChanges) return;
+
+    setIsSaving(true);
+    try {
+      // Build delta object with only changed fields
+      const changes: Partial<Task> = {};
+
+      if (editableData.title.trim() !== originalData.title) {
+        changes.title = editableData.title.trim();
+      }
+      if (editableData.description !== originalData.description) {
+        changes.description = editableData.description;
+      }
+      if (editableData.priority !== originalData.priority) {
+        changes.priority = editableData.priority;
+      }
+      if (editableData.dueDate !== originalData.dueDate) {
+        changes.dueDate = editableData.dueDate;
+      }
+
+      if (Object.keys(changes).length > 0) {
+        await onUpdate(task.id, changes);
+      }
+
+      // Close modal on successful save
+      onOpenChange(false);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [task, onUpdate, isValid, hasChanges, editableData, originalData, onOpenChange]);
+
+  // Handle cancel - discard changes and close
+  const handleCancel = useCallback(() => {
+    // Reset to original values
+    if (task) {
+      setEditableData({
+        title: task.title ?? '',
+        description: task.description ?? null,
+        priority: (task.priority as Priority) ?? null,
+        dueDate: task.dueDate ?? null,
+      });
+    }
+    onOpenChange(false);
+  }, [task, onOpenChange]);
+
+  // Handle confirm discard
+  const handleConfirmDiscard = useCallback(() => {
+    setShowDiscardDialog(false);
+    // Reset to original values and close
+    if (task) {
+      setEditableData({
+        title: task.title ?? '',
+        description: task.description ?? null,
+        priority: (task.priority as Priority) ?? null,
+        dueDate: task.dueDate ?? null,
+      });
+    }
+    onOpenChange(false);
+  }, [task, onOpenChange]);
+
   // Handle key down for title
   const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -303,7 +367,7 @@ export function TaskDetailModal({
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
-      onOpenChange(false);
+      handleAttemptClose();
     }
   };
 
@@ -311,10 +375,12 @@ export function TaskDetailModal({
   const dueDate = editableData.dueDate ? new Date(editableData.dueDate) : null;
 
   return (
+    <>
     <AnimatePresence mode="wait">
       {open && (
         /* Backdrop with flexbox centering */
         <motion.div
+            key="task-detail-modal"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4"
             variants={backdropVariants}
             initial="hidden"
@@ -328,7 +394,7 @@ export function TaskDetailModal({
               className={cn(
                 'w-full max-w-2xl max-h-[90vh]',
                 'bg-white rounded-xl shadow-modal border border-gray-200',
-                'overflow-hidden',
+                'flex flex-col overflow-hidden',
                 'focus:outline-none'
               )}
               variants={modalVariants}
@@ -352,11 +418,12 @@ export function TaskDetailModal({
                 </motion.div>
               </div>
             ) : task ? (
+              <>
               <motion.div
                 variants={contentVariants}
                 initial="hidden"
                 animate="visible"
-                className="overflow-y-auto max-h-[90vh]"
+                className="flex-1 overflow-y-auto"
               >
                 {/* Header */}
                 <motion.div
@@ -426,9 +493,8 @@ export function TaskDetailModal({
                     </div>
                   </div>
 
-                  {/* Save Indicator + Actions */}
+                  {/* Actions */}
                   <div className="flex items-center gap-2">
-                    {!readOnly && <SaveIndicator status={saveStatus} error={saveError} />}
                     {!readOnly && onDelete && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -456,7 +522,7 @@ export function TaskDetailModal({
                     )}
 
                     <button
-                      onClick={() => onOpenChange(false)}
+                      onClick={handleAttemptClose}
                       className={cn(
                         'p-2 rounded-lg text-gray-400',
                         'hover:bg-gray-100 hover:text-gray-600',
@@ -684,8 +750,36 @@ export function TaskDetailModal({
                       </span>
                     </div>
                   </motion.div>
+
                 </div>
               </motion.div>
+
+              {/* Sticky Footer - Save/Cancel buttons always visible */}
+              {!readOnly && onUpdate && (
+                <div className="flex-shrink-0 border-t border-gray-100 bg-white px-6 py-4 flex items-center justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={!hasChanges || !isValid || isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="size-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </Button>
+                </div>
+              )}
+              </>
             ) : (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -699,6 +793,28 @@ export function TaskDetailModal({
           </motion.div>
       )}
     </AnimatePresence>
+
+    {/* Discard Changes Confirmation Dialog - outside AnimatePresence (has own animation) */}
+    <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You have unsaved changes. Are you sure you want to discard them? This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep Editing</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleConfirmDiscard}
+            className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+          >
+            Discard Changes
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
