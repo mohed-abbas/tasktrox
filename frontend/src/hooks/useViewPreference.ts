@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-export type ViewMode = 'board' | 'list' | 'grid';
+export type ViewMode = 'board' | 'list' | 'calendar';
 
 const STORAGE_KEY_PREFIX = 'tasktrox:view-preference:';
 
@@ -28,7 +28,7 @@ export function useViewPreference({
   useEffect(() => {
     try {
       const stored = localStorage.getItem(storageKey);
-      if (stored && ['board', 'list', 'grid'].includes(stored)) {
+      if (stored && ['board', 'list', 'calendar'].includes(stored)) {
         setViewModeState(stored as ViewMode);
       }
     } catch {

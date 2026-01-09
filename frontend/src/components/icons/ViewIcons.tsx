@@ -270,3 +270,57 @@ export function PlusTaskIcon({ size = 20, className, ...props }: IconProps) {
     </svg>
   );
 }
+
+/**
+ * Calendar view icon - Monthly calendar layout
+ * Designed to match the style of other view icons
+ */
+export function CalendarViewIcon({ size = 20, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      {...props}
+    >
+      {/* Calendar outline */}
+      <rect
+        x="3"
+        y="4"
+        width="18"
+        height="18"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1"
+      />
+      {/* Top bar */}
+      <path
+        d="M3 9H21"
+        stroke="currentColor"
+        strokeWidth="1"
+      />
+      {/* Calendar hooks */}
+      <path
+        d="M8 2V5"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      <path
+        d="M16 2V5"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      {/* Date dots */}
+      <circle cx="8" cy="13" r="1" fill="currentColor" />
+      <circle cx="12" cy="13" r="1" fill="currentColor" />
+      <circle cx="16" cy="13" r="1" fill="currentColor" />
+      <circle cx="8" cy="17" r="1" fill="currentColor" />
+      <circle cx="12" cy="17" r="1" fill="currentColor" />
+    </svg>
+  );
+}

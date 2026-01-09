@@ -4,6 +4,7 @@ export {
   BoardIcon,
   ListIcon,
   GridIcon,
+  CalendarViewIcon,
   SearchStatusIcon,
   FilterFunnelIcon,
   TagLabelIcon,
