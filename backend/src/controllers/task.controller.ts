@@ -8,6 +8,7 @@ import type {
   ReorderTaskInput,
   BulkDeleteInput,
   ListTasksQuery,
+  GlobalTasksQuery,
 } from '../validators/task.validator.js';
 import {
   broadcastTaskCreated,
@@ -33,6 +34,36 @@ function toSerializableTask(task: Record<string, unknown>): LiveTask {
 }
 
 export class TaskController {
+  // ============ GLOBAL TASK ROUTES ============
+
+  /**
+   * GET /tasks
+   * List all tasks for the authenticated user across all projects
+   */
+  static async listUserTasks(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const query = req.query as unknown as GlobalTasksQuery;
+
+      const { tasks, total } = await TaskService.getUserTasks(userId, query);
+
+      res.json({
+        success: true,
+        data: {
+          tasks,
+          meta: {
+            total,
+            limit: query.limit || 50,
+            offset: query.offset || 0,
+            hasMore: (query.offset || 0) + tasks.length < total,
+          },
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // ============ PROJECT-SCOPED TASK ROUTES ============
 
   /**

@@ -40,6 +40,44 @@ export interface MoveTaskInput {
   order: number;
 }
 
+// Global task type (includes project context)
+export interface GlobalTask extends Task {
+  project: {
+    id: string;
+    name: string;
+    color: string;
+  };
+  column: {
+    id: string;
+    name: string;
+    projectId: string;
+  };
+}
+
+export interface GlobalTasksFilters {
+  status?: 'active' | 'completed' | 'all';
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  projectId?: string;
+  assignedToMe?: boolean;
+  dueBefore?: string;
+  dueAfter?: string;
+  search?: string;
+  sortBy?: 'dueDate' | 'priority' | 'createdAt' | 'project';
+  sortOrder?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
+
+export interface GlobalTasksResponse {
+  tasks: GlobalTask[];
+  meta: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+
 // API Response wrapper
 interface ApiResponse<T> {
   success: boolean;
@@ -142,4 +180,46 @@ export async function moveTask(
     data
   );
   return response.data.data.task;
+}
+
+// ============ GLOBAL TASKS API ============
+
+/**
+ * Get all tasks for the authenticated user across all projects
+ */
+export async function getAllTasks(
+  filters?: GlobalTasksFilters
+): Promise<GlobalTasksResponse> {
+  const params = new URLSearchParams();
+
+  if (filters) {
+    if (filters.status) params.append('status', filters.status);
+    if (filters.priority) params.append('priority', filters.priority);
+    if (filters.projectId) params.append('projectId', filters.projectId);
+    if (filters.assignedToMe) params.append('assignedToMe', 'true');
+    if (filters.dueBefore) params.append('dueBefore', filters.dueBefore);
+    if (filters.dueAfter) params.append('dueAfter', filters.dueAfter);
+    if (filters.search) params.append('search', filters.search);
+    if (filters.sortBy) params.append('sortBy', filters.sortBy);
+    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+    if (filters.limit) params.append('limit', filters.limit.toString());
+    if (filters.offset) params.append('offset', filters.offset.toString());
+  }
+
+  const queryString = params.toString();
+  const url = queryString ? `/tasks?${queryString}` : '/tasks';
+
+  const response = await api.get<ApiResponse<GlobalTasksResponse>>(url);
+  return response.data.data;
+}
+
+/**
+ * Mark a task as complete/incomplete (uses the project-scoped update endpoint)
+ */
+export async function toggleTaskComplete(
+  projectId: string,
+  taskId: string,
+  completed: boolean
+): Promise<Task> {
+  return updateTask(projectId, taskId, { completed });
 }

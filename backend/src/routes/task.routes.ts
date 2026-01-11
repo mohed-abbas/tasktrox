@@ -17,12 +17,23 @@ import {
   updateProjectTaskSchema,
   deleteProjectTaskSchema,
   moveProjectTaskSchema,
+  globalTasksSchema,
 } from '../validators/task.validator.js';
 
 const router = Router();
 
 // All task routes require authentication
 router.use(authenticate);
+
+// ============ GLOBAL TASK ROUTES ============
+// These routes operate across all projects the user has access to
+
+/**
+ * GET /tasks
+ * List all tasks for the authenticated user across all their projects
+ * Query params: status, priority, projectId, assignedToMe, dueBefore, dueAfter, search, sortBy, sortOrder, limit, offset
+ */
+router.get('/tasks', validate(globalTasksSchema), TaskController.listUserTasks);
 
 // ============ PROJECT-SCOPED TASK ROUTES ============
 // These routes allow operating on tasks through the project endpoint
