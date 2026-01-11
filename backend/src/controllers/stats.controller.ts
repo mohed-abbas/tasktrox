@@ -37,7 +37,7 @@ export class StatsController {
    */
   static async getProjectStats(req: AuthenticatedRequest, res: Response) {
     try {
-      const { projectId } = req.params;
+      const projectId = req.params.projectId as string;
       const userId = req.user!.id;
 
       if (!projectId) {

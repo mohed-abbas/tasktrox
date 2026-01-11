@@ -11,7 +11,7 @@ export class ReportsController {
    */
   static async getTasksOverTime(req: AuthenticatedRequest, res: Response) {
     try {
-      const { projectId } = req.params;
+      const projectId = req.params.projectId as string;
       const userId = req.user!.id;
       const days = parseInt(req.query.days as string) || 30;
 
@@ -60,7 +60,7 @@ export class ReportsController {
    */
   static async getTasksByStatus(req: AuthenticatedRequest, res: Response) {
     try {
-      const { projectId } = req.params;
+      const projectId = req.params.projectId as string;
       const userId = req.user!.id;
 
       if (!projectId) {
@@ -100,7 +100,7 @@ export class ReportsController {
    */
   static async getTasksByAssignee(req: AuthenticatedRequest, res: Response) {
     try {
-      const { projectId } = req.params;
+      const projectId = req.params.projectId as string;
       const userId = req.user!.id;
 
       if (!projectId) {
@@ -140,7 +140,7 @@ export class ReportsController {
    */
   static async getTasksByPriority(req: AuthenticatedRequest, res: Response) {
     try {
-      const { projectId } = req.params;
+      const projectId = req.params.projectId as string;
       const userId = req.user!.id;
 
       if (!projectId) {
@@ -180,7 +180,7 @@ export class ReportsController {
    */
   static async getCompletionMetrics(req: AuthenticatedRequest, res: Response) {
     try {
-      const { projectId } = req.params;
+      const projectId = req.params.projectId as string;
       const userId = req.user!.id;
 
       if (!projectId) {
