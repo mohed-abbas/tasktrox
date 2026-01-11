@@ -5,5 +5,5 @@ export const ctaContent: CTAContent = {
   description:
     "Unlock your team's potential by organizing tasks with Tasktrox — the modern, intuitive to-do app designed to boost productivity and reduce chaos.",
   buttonText: "Get Started",
-  buttonHref: "/signup",
+  buttonHref: "/login",
 };

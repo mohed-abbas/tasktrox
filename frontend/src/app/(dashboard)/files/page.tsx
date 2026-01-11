@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Folder,
-  Loader2,
   ChevronDown,
   ChevronRight,
   Filter,

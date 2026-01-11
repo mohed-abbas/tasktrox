@@ -9,8 +9,8 @@ export const pricingSection: PricingSection = {
     {
       id: "starter",
       name: "Starter",
-      price: "$9",
-      period: "Per Month",
+      price: "Free",
+      period: "Forever",
       description: "Kickstart your productivity journey",
       features: [
         "Up to 5 team members",
@@ -41,7 +41,7 @@ export const pricingSection: PricingSection = {
     {
       id: "enterprise",
       name: "Enterprise",
-      price: "$999",
+      price: "$99",
       period: "Per Month",
       description: "Customized for large teams & organizations",
       features: [

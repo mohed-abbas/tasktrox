@@ -16,9 +16,9 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={scrollViewport}
       transition={{ duration: 0.7, ease: easing.smooth, delay: getStaggerDelay(index, 0.1, 0.12) }}
-      className={`relative flex flex-col gap-6 bg-white rounded-2xl p-6 ${
+      className={`relative flex flex-col gap-6 bg-white rounded-2xl p-6 transition-shadow duration-300 hover:shadow-pricing-pro ${
         isHighlighted
-          ? 'border-[1.5px] border-[#0048ad] shadow-pricing-pro'
+          ? 'border-[1.5px] border-[#0048ad]'
           : 'border border-gray-200'
       }`}
     >

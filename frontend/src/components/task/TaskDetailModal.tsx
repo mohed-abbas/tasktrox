@@ -31,6 +31,7 @@ import { usePresence } from '@/hooks/usePresence';
 import { PresenceIndicator } from '@/components/presence/PresenceIndicator';
 import { CommentSection } from '@/components/comment';
 import { AttachmentUploader, AttachmentList } from '@/components/attachment';
+import { RichTextEditor } from '@/components/editor';
 import type { Task } from '@/lib/api/tasks';
 import type { Label } from '@/lib/api/labels';
 
@@ -569,38 +570,45 @@ export function TaskDetailModal({
 
                   {/* Description */}
                   <motion.div variants={itemVariants} className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Description
-                    </label>
-                    <div className="relative">
-                      <textarea
-                        value={editableData.description || ''}
-                        onChange={(e) => handleDescriptionChange(e.target.value)}
-                        onFocus={descriptionPresence.startEditing}
-                        onBlur={descriptionPresence.stopEditing}
-                        placeholder={readOnly ? 'No description' : 'Add a description...'}
-                        rows={4}
-                        disabled={readOnly}
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-gray-700">
+                        Description
+                      </label>
+                      {/* Presence indicator for description */}
+                      <PresenceIndicator
+                        user={descriptionPresence.editingUser ? {
+                          id: descriptionPresence.editingUser.id,
+                          name: descriptionPresence.editingUser.name,
+                          avatar: descriptionPresence.editingUser.avatar ?? null,
+                        } : null}
+                        size="sm"
+                      />
+                    </div>
+                    {readOnly ? (
+                      <div
                         className={cn(
                           'w-full px-3 py-2 rounded-lg border border-gray-200',
-                          'text-sm text-gray-700 placeholder:text-gray-400',
-                          'focus:border-gray-400 focus:ring-2 focus:ring-gray-800/10',
-                          'outline-none transition-colors resize-none',
-                          readOnly && 'bg-gray-50 cursor-default'
+                          'text-sm text-gray-700 min-h-[100px] bg-gray-50'
                         )}
-                      />
-                      {/* Presence indicator for description */}
-                      <div className="absolute right-2 top-2">
-                        <PresenceIndicator
-                          user={descriptionPresence.editingUser ? {
-                            id: descriptionPresence.editingUser.id,
-                            name: descriptionPresence.editingUser.name,
-                            avatar: descriptionPresence.editingUser.avatar ?? null,
-                          } : null}
-                          size="sm"
-                        />
+                      >
+                        {editableData.description ? (
+                          <div
+                            className="prose prose-sm max-w-none [&_p]:my-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0"
+                            dangerouslySetInnerHTML={{ __html: editableData.description }}
+                          />
+                        ) : (
+                          <span className="text-gray-400">No description</span>
+                        )}
                       </div>
-                    </div>
+                    ) : (
+                      <RichTextEditor
+                        value={editableData.description}
+                        onChange={handleDescriptionChange}
+                        onFocus={descriptionPresence.startEditing}
+                        onBlur={descriptionPresence.stopEditing}
+                        placeholder="Add a description..."
+                      />
+                    )}
                   </motion.div>
 
                   {/* Labels Section */}
