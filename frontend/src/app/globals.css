@@ -342,3 +342,118 @@
     @apply ring-2 ring-white;
   }
 }
+
+/* ========================================
+   FULLCALENDAR CUSTOMIZATIONS
+   Styles for the calendar view component
+   ======================================== */
+
+.calendar-view {
+  /* Calendar container */
+  .calendar-container {
+    --fc-border-color: #e5e7eb; /* gray-200 */
+    --fc-today-bg-color: #f9fafb; /* gray-50 */
+    --fc-page-bg-color: transparent;
+    --fc-neutral-bg-color: #f3f4f6; /* gray-100 */
+    --fc-button-bg-color: #ffffff;
+    --fc-button-border-color: #e5e7eb;
+    --fc-button-text-color: #374151; /* gray-700 */
+    --fc-button-hover-bg-color: #f3f4f6;
+    --fc-button-hover-border-color: #d1d5db;
+    --fc-button-active-bg-color: #1f2937; /* gray-800 */
+    --fc-button-active-border-color: #1f2937;
+  }
+
+  /* Header toolbar */
+  .fc .fc-toolbar-title {
+    @apply text-lg font-semibold text-gray-800;
+  }
+
+  /* Toolbar buttons */
+  .fc .fc-button {
+    @apply px-3 py-1.5 text-sm font-medium rounded-md border transition-colors;
+  }
+
+  .fc .fc-button:focus {
+    @apply outline-none ring-2 ring-gray-300 ring-offset-1;
+  }
+
+  .fc .fc-button-primary:not(:disabled).fc-button-active,
+  .fc .fc-button-primary:not(:disabled):active {
+    @apply bg-gray-800 border-gray-800 text-white;
+  }
+
+  /* Header cells (day names) */
+  .fc .fc-col-header-cell {
+    @apply bg-gray-50 border-gray-200;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    @apply py-2 text-xs font-medium text-gray-500 uppercase tracking-wider;
+  }
+
+  /* Day cells */
+  .fc .fc-daygrid-day {
+    @apply border-gray-200;
+  }
+
+  .fc .fc-daygrid-day-number {
+    @apply text-sm text-gray-600 p-2;
+  }
+
+  .fc .fc-daygrid-day.fc-day-today {
+    @apply bg-gray-50;
+  }
+
+  .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    @apply text-gray-800 font-semibold;
+  }
+
+  /* Events */
+  .fc .fc-event {
+    @apply border-0 rounded-md mb-1 cursor-pointer;
+  }
+
+  .fc .fc-daygrid-event {
+    @apply px-0 py-0;
+  }
+
+  .fc .fc-event:hover {
+    @apply shadow-sm;
+  }
+
+  /* More link */
+  .fc .fc-daygrid-more-link {
+    @apply text-xs text-gray-500 font-medium hover:text-gray-700;
+  }
+
+  /* Popover for "more" events */
+  .fc .fc-popover {
+    @apply rounded-lg shadow-lg border-gray-200;
+  }
+
+  .fc .fc-popover-header {
+    @apply bg-gray-50 text-sm font-medium text-gray-700 rounded-t-lg;
+  }
+
+  /* Calendar event custom styles */
+  .calendar-event {
+    @apply transition-shadow duration-150;
+  }
+
+  .calendar-event--completed {
+    @apply opacity-60;
+  }
+
+  .calendar-event--high {
+    /* High priority events get subtle red styling */
+  }
+
+  .calendar-event--medium {
+    /* Medium priority events get subtle amber styling */
+  }
+
+  .calendar-event--low {
+    /* Low priority events get subtle green styling */
+  }
+}

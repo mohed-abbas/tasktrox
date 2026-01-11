@@ -5,11 +5,13 @@ import type {
   UpdateTaskInput,
   MoveTaskInput,
   ListTasksQuery,
+  GlobalTasksQuery,
 } from '../validators/task.validator.js';
 import { ColumnService } from './column.service.js';
 import { ProjectService } from './project.service.js';
 import { taskCache } from './cache.service.js';
 import { ActivityService, ActivityAction } from './activity.service.js';
+import { sanitizeDescription } from '../utils/sanitize.js';
 
 type TaskWithRelations = Task & {
   column?: {
@@ -40,6 +42,15 @@ type TaskWithRelations = Task & {
   };
 };
 
+// Extended type for global tasks (includes project info)
+type GlobalTaskWithRelations = TaskWithRelations & {
+  project?: {
+    id: string;
+    name: string;
+    color: string;
+  };
+};
+
 // Raw Prisma result type (with nested label/user objects)
 type PrismaTaskResult = Omit<TaskWithRelations, 'labels' | 'assignees'> & {
   labels?: { label: { id: string; name: string; color: string } }[];
@@ -60,6 +71,168 @@ function transformTasks(tasks: PrismaTaskResult[]): TaskWithRelations[] {
 }
 
 export class TaskService {
+  // ============ GLOBAL TASKS ============
+
+  /**
+   * Get all tasks across all projects the user is a member of
+   * Supports filtering by status, priority, project, due date, and search
+   */
+  static async getUserTasks(
+    userId: string,
+    options: Partial<GlobalTasksQuery> = {}
+  ): Promise<{ tasks: GlobalTaskWithRelations[]; total: number }> {
+    const {
+      status = 'all',
+      priority,
+      projectId,
+      assignedToMe,
+      dueBefore,
+      dueAfter,
+      search,
+      sortBy = 'dueDate',
+      sortOrder = 'asc',
+      limit: rawLimit = 50,
+      offset: rawOffset = 0,
+    } = options;
+
+    // Ensure limit and offset are numbers (query params may come as strings)
+    const limit = typeof rawLimit === 'string' ? parseInt(rawLimit, 10) : rawLimit;
+    const offset = typeof rawOffset === 'string' ? parseInt(rawOffset, 10) : rawOffset;
+
+    // Build where clause
+    const whereClause: Record<string, unknown> = {
+      deletedAt: null,
+      column: {
+        project: {
+          deletedAt: null,
+          members: {
+            some: { userId },
+          },
+          // Filter by specific project if provided
+          ...(projectId && { id: projectId }),
+        },
+      },
+    };
+
+    // Status filter
+    if (status === 'active') {
+      whereClause.completedAt = null;
+    } else if (status === 'completed') {
+      whereClause.completedAt = { not: null };
+    }
+
+    // Priority filter
+    if (priority) {
+      whereClause.priority = priority;
+    }
+
+    // Assigned to me filter
+    if (assignedToMe) {
+      whereClause.assignees = {
+        some: { userId },
+      };
+    }
+
+    // Due date filters
+    if (dueBefore || dueAfter) {
+      whereClause.dueDate = {
+        ...(dueBefore && { lte: new Date(dueBefore) }),
+        ...(dueAfter && { gte: new Date(dueAfter) }),
+      };
+    }
+
+    // Search filter
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Build order by clause - use explicit types for Prisma
+    const orderByOptions = {
+      dueDate: { dueDate: sortOrder as 'asc' | 'desc' },
+      priority: { priority: sortOrder as 'asc' | 'desc' },
+      createdAt: { createdAt: sortOrder as 'asc' | 'desc' },
+      project: { column: { project: { name: sortOrder as 'asc' | 'desc' } } },
+    };
+    const orderBy = orderByOptions[sortBy as keyof typeof orderByOptions] || { dueDate: 'asc' as const };
+
+    // Get total count for pagination
+    const total = await prisma.task.count({ where: whereClause });
+
+    // Fetch tasks
+    const tasks = await prisma.task.findMany({
+      where: whereClause,
+      include: {
+        column: {
+          select: {
+            id: true,
+            name: true,
+            projectId: true,
+            project: {
+              select: {
+                id: true,
+                name: true,
+                color: true,
+              },
+            },
+          },
+        },
+        createdBy: {
+          select: { id: true, name: true, email: true, avatar: true },
+        },
+        labels: {
+          select: {
+            label: {
+              select: { id: true, name: true, color: true },
+            },
+          },
+        },
+        assignees: {
+          select: {
+            user: {
+              select: { id: true, name: true, avatar: true },
+            },
+          },
+        },
+        _count: {
+          select: { assignees: true, attachments: true, comments: true },
+        },
+      },
+      orderBy,
+      take: limit,
+      skip: offset,
+    });
+
+    // Transform to flatten nested relations and extract project info
+    const transformedTasks = tasks.map((task) => {
+      const column = task.column as {
+        id: string;
+        name: string;
+        projectId: string;
+        project: { id: string; name: string; color: string };
+      };
+      return {
+        ...task,
+        labels: (task.labels as { label: { id: string; name: string; color: string } }[])?.map(
+          (tl) => tl.label
+        ),
+        assignees: (task.assignees as { user: { id: string; name: string; avatar: string | null } }[])?.map(
+          (ta) => ta.user
+        ),
+        project: column.project,
+        column: {
+          id: column.id,
+          name: column.name,
+          projectId: column.projectId,
+        },
+      } as GlobalTaskWithRelations;
+    });
+
+    return { tasks: transformedTasks, total };
+  }
+
   // ============ TASK CRUD ============
 
   /**
@@ -325,7 +498,7 @@ export class TaskService {
     const task = await prisma.task.create({
       data: {
         title: data.title,
-        description: data.description,
+        description: sanitizeDescription(data.description),
         priority: data.priority as Priority | undefined,
         dueDate: data.dueDate && data.dueDate !== '' ? new Date(data.dueDate) : null,
         order,
@@ -389,7 +562,7 @@ export class TaskService {
       updateData.title = data.title;
     }
     if (data.description !== undefined) {
-      updateData.description = data.description;
+      updateData.description = sanitizeDescription(data.description);
     }
     if (data.priority !== undefined) {
       updateData.priority = data.priority;

@@ -7,12 +7,20 @@ import {
   attachmentParamsSchema,
   attachmentIdParamsSchema,
   downloadParamsSchema,
+  globalFilesSchema,
 } from '../validators/attachment.validator.js';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
+
+// GET /files - List all files from all user's projects
+router.get(
+  '/files',
+  validate(globalFilesSchema),
+  AttachmentController.listUserFiles
+);
 
 // GET /projects/:projectId/tasks/:taskId/attachments - List task attachments
 router.get(

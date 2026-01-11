@@ -2,8 +2,10 @@
 
 import { forwardRef } from 'react';
 import { Calendar, Paperclip, Circle, CheckCircle2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, getDueDateColor } from '@/lib/utils';
 import { getLabelStyles } from '@/components/labels';
+import { PriorityBadge } from '@/components/task/PrioritySelector';
+import { stripHtml } from '@/components/editor';
 import type { Task } from './Board';
 
 // Format date for display
@@ -87,15 +89,24 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
         )}
 
         <div className="flex flex-col gap-[14px]">
-          {/* Top Section: Date + Title + Description + Labels */}
+          {/* Top Section: Date + Priority + Title + Description + Labels */}
           <div className="flex flex-col gap-3">
-            {/* Due Date */}
-            {formattedDate && (
-              <div className="flex items-center gap-1.5">
-                <Calendar className="size-[22px] text-gray-400" strokeWidth={1.5} />
-                <span className="text-sm text-gray-500 leading-normal">
-                  {formattedDate}
-                </span>
+            {/* Due Date and Priority Row */}
+            {(formattedDate || task.priority) && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Due Date with urgency colors */}
+                {formattedDate && (
+                  <div className={cn('flex items-center gap-1.5', getDueDateColor(task.dueDate))}>
+                    <Calendar className="size-[18px]" strokeWidth={1.5} />
+                    <span className="text-sm leading-normal">
+                      {formattedDate}
+                    </span>
+                  </div>
+                )}
+                {/* Priority Badge */}
+                {task.priority && (
+                  <PriorityBadge priority={task.priority} size="sm" />
+                )}
               </div>
             )}
 
@@ -109,7 +120,7 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
               </h4>
               {task.description && (
                 <p className="text-sm text-gray-500 leading-normal line-clamp-2">
-                  {task.description}
+                  {stripHtml(task.description)}
                 </p>
               )}
             </div>

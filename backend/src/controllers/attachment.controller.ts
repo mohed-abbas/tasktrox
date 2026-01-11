@@ -3,7 +3,7 @@ import { AttachmentService } from '../services/attachment.service.js';
 import { ActivityService, ActivityAction } from '../services/activity.service.js';
 import { broadcastAttachmentUploaded, broadcastAttachmentDeleted } from '../sockets/broadcast.js';
 import { handleUploadError } from '../middleware/upload.middleware.js';
-import type { AttachmentParams, AttachmentIdParams, DownloadParams } from '../validators/attachment.validator.js';
+import type { AttachmentParams, AttachmentIdParams, DownloadParams, GlobalFilesQuery } from '../validators/attachment.validator.js';
 import type { LiveAttachment } from '../types/presence.js';
 
 export class AttachmentController {
@@ -221,6 +221,34 @@ export class AttachmentController {
       res.json({
         success: true,
         data: { url: downloadUrl },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /files
+   * List all files from all projects the user has access to
+   */
+  static async listUserFiles(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const query = req.query as unknown as GlobalFilesQuery;
+
+      const { files, total } = await AttachmentService.getUserFiles(userId, query);
+
+      res.json({
+        success: true,
+        data: {
+          files,
+          meta: {
+            total,
+            limit: query.limit || 100,
+            offset: query.offset || 0,
+            hasMore: (query.offset || 0) + files.length < total,
+          },
+        },
       });
     } catch (error) {
       next(error);

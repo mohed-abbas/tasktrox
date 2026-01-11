@@ -8,7 +8,7 @@ import { Loader2, AlertCircle, Settings, LogOut } from 'lucide-react';
 import { ViewNav, type ViewType } from '@/components/app';
 import { getProject, type Project } from '@/lib/api/projects';
 import { Board, type Task, type ColumnWithTasks } from '@/components/board';
-import { ListView, GridView } from '@/components/views';
+import { ListView, CalendarView } from '@/components/views';
 import { TaskDetailModal } from '@/components/task';
 import { toast } from 'sonner';
 import { useColumns, useTasks, useTask, useLabels, useViewPreference, useProjectMembers, useAuth, useFilters, type ViewMode } from '@/hooks';
@@ -211,6 +211,14 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     return await createLabel({ name, color });
   }, [createLabel]);
 
+  // Handle due date change from calendar drag-drop
+  const handleDueDateChange = useCallback(async (taskId: string, newDate: string | null) => {
+    await updateTaskFromList({
+      taskId,
+      data: { dueDate: newDate },
+    });
+  }, [updateTaskFromList]);
+
   // Transform project members for FilterPanel
   const filterMembers = useMemo(() =>
     projectMembers.map(m => ({
@@ -404,12 +412,13 @@ export default function ProjectPage({ params }: ProjectPageProps) {
           />
         )}
 
-        {viewMode === 'grid' && (
-          <GridView
+        {viewMode === 'calendar' && (
+          <CalendarView
             columns={columnsWithTasks}
             projectId={projectId}
             isLoading={isLoadingTasks}
             onTaskClick={handleTaskClick}
+            onDueDateChange={canEditTasks ? handleDueDateChange : undefined}
           />
         )}
       </div>

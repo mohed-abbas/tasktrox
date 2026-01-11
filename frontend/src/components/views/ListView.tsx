@@ -8,7 +8,7 @@ import {
   Clock,
   GripVertical,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDueDate, getDueDateColor } from '@/lib/utils';
 import { PriorityBadge } from '@/components/task/PrioritySelector';
 import { LabelBadge } from '@/components/labels';
 import { AssigneeAvatarStack } from '@/components/task/AssigneeSelector';
@@ -35,37 +35,6 @@ const rowVariants = {
     transition: { duration: 0.1 },
   },
 };
-
-// Format due date for display
-function formatDueDate(dateStr: string | null): string | null {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffDays = Math.ceil(
-    (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (diffDays < 0) return 'Overdue';
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Tomorrow';
-  if (diffDays <= 7) return `${diffDays} days`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-// Get due date color
-function getDueDateColor(dateStr: string | null): string {
-  if (!dateStr) return 'text-gray-400';
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffDays = Math.ceil(
-    (date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (diffDays < 0) return 'text-red-600';
-  if (diffDays === 0) return 'text-amber-600';
-  if (diffDays <= 2) return 'text-amber-500';
-  return 'text-gray-500';
-}
 
 interface ColumnSectionProps {
   column: ColumnWithTasks;

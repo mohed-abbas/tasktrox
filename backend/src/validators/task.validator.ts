@@ -35,6 +35,32 @@ export const listTasksQuerySchema = z.object({
   search: z.string().max(200).optional(),
 });
 
+// Global tasks query schema (for /api/v1/tasks - all user's tasks)
+export const globalTasksQuerySchema = z.object({
+  status: z.enum(['active', 'completed', 'all']).optional().default('all'),
+  priority: priorityEnum.optional(),
+  projectId: z.string().optional(),
+  assignedToMe: z
+    .string()
+    .optional()
+    .transform((val) => val === 'true'),
+  dueBefore: z.string().datetime().optional(),
+  dueAfter: z.string().datetime().optional(),
+  search: z.string().max(200).optional(),
+  sortBy: z.enum(['dueDate', 'priority', 'createdAt', 'project']).optional().default('dueDate'),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 50))
+    .pipe(z.number().int().min(1).max(100)),
+  offset: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : 0))
+    .pipe(z.number().int().min(0)),
+});
+
 // ============ BODY SCHEMAS ============
 
 export const createTaskBodySchema = z.object({
@@ -166,9 +192,16 @@ export const moveProjectTaskSchema = z.object({
   body: moveTaskBodySchema,
 });
 
+// ============ GLOBAL TASKS SCHEMA ============
+
+export const globalTasksSchema = z.object({
+  query: globalTasksQuerySchema,
+});
+
 // ============ TYPE EXPORTS ============
 
 export type ListTasksQuery = z.infer<typeof listTasksQuerySchema>;
+export type GlobalTasksQuery = z.infer<typeof globalTasksQuerySchema>;
 export type CreateTaskInput = z.infer<typeof createTaskBodySchema>;
 export type UpdateTaskInput = z.infer<typeof updateTaskBodySchema>;
 export type MoveTaskInput = z.infer<typeof moveTaskBodySchema>;

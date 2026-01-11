@@ -4,13 +4,13 @@ import { useState } from 'react';
 import {
   BoardIcon,
   ListIcon,
-  GridIcon,
+  CalendarViewIcon,
   SearchStatusIcon,
   FilterFunnelIcon,
 } from '@/components/icons';
 import { cn } from '@/lib/utils';
 
-export type ViewType = 'board' | 'list' | 'grid';
+export type ViewType = 'board' | 'list' | 'calendar';
 
 interface ViewNavProps {
   activeView?: ViewType;
@@ -25,7 +25,7 @@ interface ViewNavProps {
 const viewOptions: { id: ViewType; label: string; icon: typeof BoardIcon }[] = [
   { id: 'board', label: 'Board', icon: BoardIcon },
   { id: 'list', label: 'List', icon: ListIcon },
-  { id: 'grid', label: 'Grid', icon: GridIcon },
+  { id: 'calendar', label: 'Calendar', icon: CalendarViewIcon },
 ];
 
 export function ViewNav({
