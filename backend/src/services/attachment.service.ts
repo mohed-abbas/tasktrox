@@ -14,7 +14,8 @@ import {
   isStorageConfigured,
 } from '../config/storage.js';
 import { ProjectService } from './project.service.js';
-import type { Attachment } from '@prisma/client';
+import type { Attachment, Prisma } from '@prisma/client';
+import type { GlobalFilesQuery } from '../validators/attachment.validator.js';
 
 /**
  * Attachment with uploader info
@@ -25,6 +26,45 @@ export type AttachmentWithUploader = Attachment & {
     name: string;
     avatar: string | null;
   };
+};
+
+/**
+ * File with relations for global files listing
+ */
+export type FileWithRelations = Attachment & {
+  uploadedBy: {
+    id: string;
+    name: string;
+    avatar: string | null;
+  };
+  task: {
+    id: string;
+    title: string;
+  };
+  project: {
+    id: string;
+    name: string;
+    color: string;
+  };
+};
+
+/**
+ * MIME type category mapping for file type filtering
+ */
+const FILE_TYPE_MIME_MAP: Record<string, string[]> = {
+  images: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+  documents: [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+  ],
+  spreadsheets: [
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv',
+  ],
+  archives: ['application/zip', 'application/x-rar-compressed', 'application/gzip', 'application/x-7z-compressed'],
 };
 
 /**
@@ -265,6 +305,131 @@ export class AttachmentService {
     return prisma.attachment.count({
       where: { taskId },
     });
+  }
+
+  /**
+   * Get all files from all projects the user has access to
+   */
+  static async getUserFiles(
+    userId: string,
+    options: Partial<GlobalFilesQuery> = {}
+  ): Promise<{ files: FileWithRelations[]; total: number }> {
+    const {
+      search,
+      type,
+      projectId,
+      dateFrom,
+      dateTo,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      limit = 100,
+      offset = 0,
+    } = options;
+
+    // Build base where clause for project membership
+    const projectFilter: Prisma.ProjectWhereInput = {
+      members: {
+        some: { userId },
+      },
+    };
+
+    // Add project ID filter if specified
+    if (projectId) {
+      projectFilter.id = projectId;
+    }
+
+    // Build the main where clause
+    const where: Prisma.AttachmentWhereInput = {
+      task: {
+        column: {
+          project: projectFilter,
+        },
+      },
+    };
+
+    // Build AND conditions array for additional filters
+    const andConditions: Prisma.AttachmentWhereInput[] = [];
+
+    // Search filter (filename or original name)
+    if (search) {
+      andConditions.push({
+        OR: [
+          { filename: { contains: search, mode: 'insensitive' } },
+          { originalName: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    // Type filter (MIME type category)
+    if (type) {
+      const mimeTypes = FILE_TYPE_MIME_MAP[type];
+      if (mimeTypes) {
+        andConditions.push({ mimeType: { in: mimeTypes } });
+      } else if (type === 'other') {
+        // "Other" means everything not in the defined categories
+        const allKnownMimes = Object.values(FILE_TYPE_MIME_MAP).flat();
+        andConditions.push({ mimeType: { notIn: allKnownMimes } });
+      }
+    }
+
+    // Date range filters
+    if (dateFrom) {
+      andConditions.push({ createdAt: { gte: new Date(dateFrom) } });
+    }
+    if (dateTo) {
+      andConditions.push({ createdAt: { lte: new Date(dateTo) } });
+    }
+
+    // Add AND conditions if any exist
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
+    }
+
+    // Build orderBy
+    const orderBy: Prisma.AttachmentOrderByWithRelationInput = {
+      [sortBy]: sortOrder,
+    };
+
+    // Execute queries in parallel
+    const [files, total] = await Promise.all([
+      prisma.attachment.findMany({
+        where,
+        include: {
+          uploadedBy: {
+            select: { id: true, name: true, avatar: true },
+          },
+          task: {
+            select: {
+              id: true,
+              title: true,
+              column: {
+                select: {
+                  project: {
+                    select: { id: true, name: true, color: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy,
+        take: limit,
+        skip: offset,
+      }),
+      prisma.attachment.count({ where }),
+    ]);
+
+    // Transform to flatten project info
+    const transformedFiles = files.map((file) => ({
+      ...file,
+      task: {
+        id: file.task.id,
+        title: file.task.title,
+      },
+      project: file.task.column.project,
+    })) as FileWithRelations[];
+
+    return { files: transformedFiles, total };
   }
 }
 
