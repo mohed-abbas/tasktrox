@@ -1,0 +1,13 @@
+node_modules
+dist
+Dockerfile.dev
+.env*
+!.env.example
+.git
+.gitignore
+.vscode
+.idea
+*.swp
+.DS_Store
+*.md
+coverage

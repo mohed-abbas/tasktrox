@@ -1,0 +1,75 @@
+# ===========================================
+# CI — Pull Request Quality Gate
+# ===========================================
+# Runs on every PR to main. Must pass before merge.
+# Concurrency: cancels older runs on the same PR (save runner minutes).
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ----- Lint + Type Check -----
+  check:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Install all workspace dependencies from root lockfile
+      - run: npm ci
+
+      # Lint both workspaces
+      - name: Lint
+        run: npm run lint
+
+      # Type-check backend (tsc --noEmit via build script)
+      - name: Type-check backend
+        run: npm run build --workspace=backend
+
+      # Type-check frontend (next build does type-checking)
+      # Skipped here — covered by build-test job below
+
+  # ----- Docker Build Test -----
+  # Verifies both Dockerfiles build successfully without pushing
+  build-test:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build frontend image (verify Dockerfile works)
+      - name: Build frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: false
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://tasktrox.thecodeman.cloud
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+      # Build backend image (verify Dockerfile works)
+      - name: Build backend
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: false
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend

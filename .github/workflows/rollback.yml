@@ -1,0 +1,38 @@
+# ===========================================
+# ROLLBACK — Emergency Recovery
+# ===========================================
+# Manually triggered. Deploys a specific previously-built SHA.
+# The image must already exist in GHCR (it was built by a prior deploy).
+#
+# Usage: Actions tab → Rollback → Run workflow → enter SHA
+
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Git SHA to roll back to (7-char short SHA, e.g. abc1234)"
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    name: Rollback to ${{ inputs.sha }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rollback via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            export GITHUB_USER="${{ github.repository_owner }}"
+            /home/murx/apps/tasktrox/scripts/deploy.sh \
+              ${{ inputs.sha }} \
+              ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,118 @@
+# ===========================================
+# TASKTROX — PRODUCTION SERVICES (BLUE/GREEN)
+# ===========================================
+# Deployed to: /home/murx/apps/tasktrox/docker-compose.yml
+#
+# Blue/green deployment: only ONE slot (blue or green) runs at a time.
+# The deploy script manages which services are up.
+#
+# Start blue slot:
+#   docker compose up -d tasktrox-frontend-blue tasktrox-backend-blue
+#
+# Start green slot:
+#   docker compose up -d tasktrox-frontend-green tasktrox-backend-green
+#
+# Requires external networks (created during VPS setup):
+#   docker network create proxy-net
+#   docker network create data-net
+
+services:
+  # ----- Frontend Blue -----
+  tasktrox-frontend-blue:
+    image: ghcr.io/${GITHUB_USER}/tasktrox-frontend:${IMAGE_TAG:-latest}
+    container_name: tasktrox-frontend-blue
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    environment:
+      - NODE_ENV=production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  # ----- Frontend Green -----
+  tasktrox-frontend-green:
+    image: ghcr.io/${GITHUB_USER}/tasktrox-frontend:${IMAGE_TAG:-latest}
+    container_name: tasktrox-frontend-green
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    environment:
+      - NODE_ENV=production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  # ----- Backend Blue -----
+  tasktrox-backend-blue:
+    image: ghcr.io/${GITHUB_USER}/tasktrox-backend:${IMAGE_TAG:-latest}
+    container_name: tasktrox-backend-blue
+    restart: unless-stopped
+    networks:
+      - proxy-net
+      - data-net
+    env_file:
+      - .env.production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1.5G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+
+  # ----- Backend Green -----
+  tasktrox-backend-green:
+    image: ghcr.io/${GITHUB_USER}/tasktrox-backend:${IMAGE_TAG:-latest}
+    container_name: tasktrox-backend-green
+    restart: unless-stopped
+    networks:
+      - proxy-net
+      - data-net
+    env_file:
+      - .env.production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1.5G
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
+
+networks:
+  proxy-net:
+    external: true
+  data-net:
+    external: true
