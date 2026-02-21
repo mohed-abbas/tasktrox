@@ -30,6 +30,10 @@ jobs:
       # Install all workspace dependencies from root lockfile
       - run: npm ci
 
+      # Generate Prisma client (needed for type-checking)
+      - name: Generate Prisma client
+        run: npx prisma generate --schema=backend/prisma/schema.prisma
+
       # Lint both workspaces
       - name: Lint
         run: npm run lint
