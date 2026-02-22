@@ -2,6 +2,7 @@
 # CD — Build, Push to GHCR, Deploy to VPS
 # ===========================================
 # Runs on every push to main (after PR is merged).
+# Can also be triggered manually via workflow_dispatch.
 # Concurrency: NEVER cancel a running deploy — could leave VPS in broken state.
 
 name: Deploy
@@ -9,6 +10,12 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_build:
+        description: 'Skip image build (env-only redeploy)'
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-production
@@ -21,6 +28,7 @@ jobs:
   # ----- Build & Push Images to GHCR -----
   build-and-push:
     name: Build & Push Images
+    if: ${{ !inputs.skip_build }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -73,10 +81,11 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
-  # ----- Deploy to VPS via SSH -----
+  # ----- Full Deploy to VPS (build + blue-green swap) -----
   deploy:
     name: Deploy to VPS
     needs: build-and-push
+    if: ${{ !inputs.skip_build }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
@@ -90,3 +99,34 @@ jobs:
             /home/murx/apps/tasktrox/scripts/deploy.sh \
               ${{ needs.build-and-push.outputs.image-tag }} \
               ${{ secrets.GITHUB_TOKEN }}
+
+  # ----- Env-only Redeploy (no build, just restart active containers) -----
+  redeploy:
+    name: Redeploy (env-only)
+    if: ${{ inputs.skip_build == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Redeploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            export GITHUB_USER="${{ github.repository_owner }}"
+            ACTIVE_SLOT=$(cat /home/murx/apps/tasktrox/active-slot 2>/dev/null || echo "blue")
+            IMAGE_TAG=$(cat /home/murx/apps/tasktrox/current-sha 2>/dev/null || echo "latest")
+            export IMAGE_TAG
+
+            echo "Recreating ${ACTIVE_SLOT} containers with updated .env.production..."
+            cd /home/murx/apps/tasktrox
+            docker compose up -d --pull never --force-recreate \
+              "tasktrox-frontend-${ACTIVE_SLOT}" "tasktrox-backend-${ACTIVE_SLOT}"
+
+            # Wait for health checks
+            echo "Waiting for containers to become healthy..."
+            sleep 15
+
+            # Reload nginx to pick up new container IPs
+            docker exec nginx nginx -s reload
+            echo "Redeploy complete. Active slot: ${ACTIVE_SLOT}"
