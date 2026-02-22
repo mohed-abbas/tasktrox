@@ -49,10 +49,7 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next && chown nextjs:nodejs .next
 
 # Copy standalone server and static files
-# outputFileTracingRoot points to '../' (monorepo root), so standalone
-# output nests files under frontend/ instead of the root
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/frontend ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
