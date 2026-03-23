@@ -26,8 +26,10 @@
     "db:generate": "npm run db:generate --workspace=backend",
     "db:studio": "npm run db:studio --workspace=backend"
   },
+  "optionalDependencies": {
+    "@rolldown/binding-darwin-arm64": "^1.0.0-rc.11"
+  },
   "devDependencies": {
-    "@rolldown/binding-darwin-arm64": "^1.0.0-rc.11",
     "@types/multer": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.19.0",
