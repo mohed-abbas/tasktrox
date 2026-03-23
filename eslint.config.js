@@ -47,5 +47,21 @@ export default [
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    files: ['**/__tests__/**/*.ts', '**/__tests__/**/*.tsx', '**/*.test.ts', '**/*.test.tsx'],
+    languageOptions: {
+      globals: {
+        vi: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeAll: 'readonly',
+        beforeEach: 'readonly',
+        afterAll: 'readonly',
+        afterEach: 'readonly',
+        test: 'readonly',
+      },
+    },
+  },
   prettierConfig,
 ];

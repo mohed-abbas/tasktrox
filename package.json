@@ -14,6 +14,9 @@
     "build": "npm run build --workspaces",
     "build:frontend": "npm run build --workspace=frontend",
     "build:backend": "npm run build --workspace=backend",
+    "test": "npm run test --workspaces",
+    "test:backend": "npm run test --workspace=backend",
+    "test:frontend": "npm run test --workspace=frontend",
     "lint": "npm run lint --workspaces",
     "lint:fix": "npm run lint:fix --workspaces",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
@@ -22,6 +25,9 @@
     "db:migrate": "npm run db:migrate --workspace=backend",
     "db:generate": "npm run db:generate --workspace=backend",
     "db:studio": "npm run db:studio --workspace=backend"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-darwin-arm64": "^1.0.0-rc.11"
   },
   "devDependencies": {
     "@types/multer": "^2.0.0",
