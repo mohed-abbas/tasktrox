@@ -53,7 +53,7 @@ vi.mock('framer-motion', () => ({
       className,
       onClick,
       role,
-      ...rest
+      ..._rest
     }: React.HTMLAttributes<HTMLDivElement> & { variants?: unknown; initial?: string; animate?: string; exit?: string }) => (
       <div className={className} onClick={onClick} role={role}>
         {children}
@@ -132,7 +132,7 @@ vi.mock('@/components/editor', () => ({
 }));
 
 vi.mock('@/components/task/DatePicker', () => ({
-  DatePicker: ({ value, disabled }: { value: Date | null; onChange: (d: Date | null) => void; disabled?: boolean }) => (
+  DatePicker: ({ value, disabled: _disabled }: { value: Date | null; onChange: (d: Date | null) => void; disabled?: boolean }) => (
     <div data-testid="date-picker">{value ? value.toISOString() : 'No date'}</div>
   ),
 }));
@@ -140,8 +140,8 @@ vi.mock('@/components/task/DatePicker', () => ({
 vi.mock('@/components/task/PrioritySelector', () => ({
   PrioritySelector: ({
     value,
-    onChange,
-    disabled,
+    onChange: _onChange,
+    disabled: _disabled,
   }: {
     value: string | null;
     onChange: (v: string) => void;
@@ -198,7 +198,7 @@ vi.mock('@/components/ui/button', () => ({
     children,
     onClick,
     disabled,
-    variant,
+    variant: _variant,
     ...props
   }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: string }) => (
     <button onClick={onClick} disabled={disabled} {...props}>

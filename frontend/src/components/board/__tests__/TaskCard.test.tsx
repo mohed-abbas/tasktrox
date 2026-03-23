@@ -34,7 +34,7 @@ vi.mock('@/components/editor', () => ({
 
 // Mock label styles
 vi.mock('@/components/labels', () => ({
-  getLabelStyles: (color: string) => ({ bg: 'bg-test', text: 'text-test' }),
+  getLabelStyles: (_color: string) => ({ bg: 'bg-test', text: 'text-test' }),
 }));
 
 function createMockTask(overrides: Partial<Task> = {}): Task {
