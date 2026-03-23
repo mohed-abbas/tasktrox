@@ -24,7 +24,7 @@ describe('Task Routes', () => {
     it('creates a task and returns 201', async () => {
       const { owner, columns } = await createTestProject();
       const token = createAuthToken(owner);
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       const res = await request(app)
         .post(`/api/v1/columns/${columnId}/tasks`)
@@ -45,7 +45,7 @@ describe('Task Routes', () => {
     it('returns 400 for missing title', async () => {
       const { owner, columns } = await createTestProject();
       const token = createAuthToken(owner);
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       const res = await request(app)
         .post(`/api/v1/columns/${columnId}/tasks`)
@@ -59,7 +59,7 @@ describe('Task Routes', () => {
 
     it('returns 401 without authentication', async () => {
       const { columns } = await createTestProject();
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       const res = await request(app)
         .post(`/api/v1/columns/${columnId}/tasks`)
@@ -73,7 +73,7 @@ describe('Task Routes', () => {
       const { columns } = await createTestProject();
       const nonMember = await createTestUser();
       const token = createAuthToken(nonMember);
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       const res = await request(app)
         .post(`/api/v1/columns/${columnId}/tasks`)
@@ -92,7 +92,7 @@ describe('Task Routes', () => {
       const { owner, columns } = await createTestProject();
       const token = createAuthToken(owner);
       const task = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
         title: 'Findable Task',
       });
@@ -112,7 +112,7 @@ describe('Task Routes', () => {
       const nonMember = await createTestUser();
       const token = createAuthToken(nonMember);
       const task = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
       });
 
@@ -145,7 +145,7 @@ describe('Task Routes', () => {
       const { owner, columns } = await createTestProject();
       const token = createAuthToken(owner);
       const task = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
         title: 'Original Title',
       });
@@ -166,7 +166,7 @@ describe('Task Routes', () => {
       const nonMember = await createTestUser();
       const token = createAuthToken(nonMember);
       const task = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
       });
 
@@ -187,7 +187,7 @@ describe('Task Routes', () => {
       const { owner, columns } = await createTestProject();
       const token = createAuthToken(owner);
       const task = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
         title: 'Delete Me',
       });
@@ -228,8 +228,8 @@ describe('Task Routes', () => {
     it('returns 200 when moving a task to a different column', async () => {
       const { owner, columns } = await createTestProject();
       const token = createAuthToken(owner);
-      const sourceColumn = columns[0]; // To Do
-      const targetColumn = columns[1]; // In Progress
+      const sourceColumn = columns[0]!; // To Do
+      const targetColumn = columns[1]!; // In Progress
 
       const task = await createTestTask({
         columnId: sourceColumn.id,
@@ -256,7 +256,7 @@ describe('Task Routes', () => {
       const { owner, columns } = await createTestProject();
       const token = createAuthToken(owner);
       const task = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
         order: 0,
       });
@@ -286,7 +286,7 @@ describe('Task Routes', () => {
     it('returns 200 with tasks for a project member', async () => {
       const { owner, columns } = await createTestProject();
       const token = createAuthToken(owner);
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       await createTestTask({
         columnId,
@@ -317,7 +317,7 @@ describe('Task Routes', () => {
       const token = createAuthToken(nonMember);
 
       const res = await request(app)
-        .get(`/api/v1/columns/${columns[0].id}/tasks`)
+        .get(`/api/v1/columns/${columns[0]!.id}/tasks`)
         .set('Authorization', `Bearer ${token}`)
         .expect(404);
 

@@ -30,15 +30,15 @@ describe('ProjectService', () => {
       // Should have default columns
       expect(project.columns).toBeDefined();
       expect(project.columns!.length).toBe(4); // To Do, In Progress, Review, Done
-      expect(project.columns![0].name).toBe('To Do');
-      expect(project.columns![1].name).toBe('In Progress');
-      expect(project.columns![2].name).toBe('Review');
-      expect(project.columns![3].name).toBe('Done');
+      expect(project.columns![0]!.name).toBe('To Do');
+      expect(project.columns![1]!.name).toBe('In Progress');
+      expect(project.columns![2]!.name).toBe('Review');
+      expect(project.columns![3]!.name).toBe('Done');
 
       // Should have owner membership
       expect(project.members).toBeDefined();
       expect(project.members!.length).toBe(1);
-      expect(project.members![0].user.id).toBe(user.id);
+      expect(project.members![0]!.user.id).toBe(user.id);
     });
 
     it('creates a project with a custom color', async () => {

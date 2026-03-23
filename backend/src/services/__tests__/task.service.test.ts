@@ -22,7 +22,7 @@ describe('TaskService', () => {
   describe('createTask', () => {
     it('creates a task in a column with correct fields', async () => {
       const { owner, columns } = await createTestProject();
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       const task = await TaskService.createTask(columnId, owner.id, {
         title: 'My First Task',
@@ -40,7 +40,7 @@ describe('TaskService', () => {
 
     it('assigns sequential order to tasks in the same column', async () => {
       const { owner, columns } = await createTestProject();
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       const task1 = await TaskService.createTask(columnId, owner.id, {
         title: 'Task 1',
@@ -56,7 +56,7 @@ describe('TaskService', () => {
     it('returns null for a non-member trying to create a task', async () => {
       const { columns } = await createTestProject();
       const nonMember = await createTestUser();
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       const task = await TaskService.createTask(columnId, nonMember.id, {
         title: 'Unauthorized Task',
@@ -72,7 +72,7 @@ describe('TaskService', () => {
     it('returns the task for a project member', async () => {
       const { owner, columns } = await createTestProject();
       const created = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
         title: 'Findable Task',
       });
@@ -88,7 +88,7 @@ describe('TaskService', () => {
       const { owner, columns } = await createTestProject();
       const nonMember = await createTestUser();
       const created = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
       });
 
@@ -100,7 +100,7 @@ describe('TaskService', () => {
     it('returns null for a soft-deleted task', async () => {
       const { owner, columns } = await createTestProject();
       const created = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
       });
 
@@ -121,7 +121,7 @@ describe('TaskService', () => {
     it('updates title, description, and priority', async () => {
       const { owner, columns } = await createTestProject();
       const created = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
         title: 'Original Title',
       });
@@ -141,7 +141,7 @@ describe('TaskService', () => {
       const { owner, columns } = await createTestProject();
       const nonMember = await createTestUser();
       const created = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
       });
 
@@ -155,7 +155,7 @@ describe('TaskService', () => {
     it('marks a task as completed', async () => {
       const { owner, columns } = await createTestProject();
       const created = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
       });
 
@@ -174,7 +174,7 @@ describe('TaskService', () => {
     it('soft-deletes a task (sets deletedAt)', async () => {
       const { owner, columns } = await createTestProject();
       const created = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
       });
 
@@ -193,7 +193,7 @@ describe('TaskService', () => {
       const { owner, columns } = await createTestProject();
       const nonMember = await createTestUser();
       const created = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
       });
 
@@ -214,8 +214,8 @@ describe('TaskService', () => {
   describe('moveTask', () => {
     it('moves a task to a different column', async () => {
       const { owner, columns } = await createTestProject();
-      const sourceColumn = columns[0]; // To Do
-      const targetColumn = columns[1]; // In Progress
+      const sourceColumn = columns[0]!; // To Do
+      const targetColumn = columns[1]!; // In Progress
 
       const task = await createTestTask({
         columnId: sourceColumn.id,
@@ -239,13 +239,13 @@ describe('TaskService', () => {
       const nonMember = await createTestUser();
 
       const task = await createTestTask({
-        columnId: columns[0].id,
+        columnId: columns[0]!.id,
         createdById: owner.id,
         order: 0,
       });
 
       const result = await TaskService.moveTask(task.id, nonMember.id, {
-        targetColumnId: columns[1].id,
+        targetColumnId: columns[1]!.id,
         order: 0,
       });
 
@@ -257,13 +257,13 @@ describe('TaskService', () => {
       const project2 = await createTestProject();
 
       const task = await createTestTask({
-        columnId: project1.columns[0].id,
+        columnId: project1.columns[0]!.id,
         createdById: project1.owner.id,
         order: 0,
       });
 
       const result = await TaskService.moveTask(task.id, project1.owner.id, {
-        targetColumnId: project2.columns[0].id,
+        targetColumnId: project2.columns[0]!.id,
         order: 0,
       });
 
@@ -272,7 +272,7 @@ describe('TaskService', () => {
 
     it('updates order correctly when moving within the same column', async () => {
       const { owner, columns } = await createTestProject();
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       const task0 = await createTestTask({
         columnId,

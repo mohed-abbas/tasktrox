@@ -26,13 +26,13 @@ describe('ColumnService', () => {
 
       expect(columns).not.toBeNull();
       expect(columns!.length).toBe(3); // Factory creates To Do, In Progress, Done
-      expect(columns![0].name).toBe('To Do');
-      expect(columns![1].name).toBe('In Progress');
-      expect(columns![2].name).toBe('Done');
+      expect(columns![0]!.name).toBe('To Do');
+      expect(columns![1]!.name).toBe('In Progress');
+      expect(columns![2]!.name).toBe('Done');
 
       // Verify ordered by order
       for (let i = 1; i < columns!.length; i++) {
-        expect(columns![i].order).toBeGreaterThan(columns![i - 1].order);
+        expect(columns![i]!.order).toBeGreaterThan(columns![i - 1]!.order);
       }
     });
 
@@ -84,7 +84,7 @@ describe('ColumnService', () => {
         owner.id
       );
       expect(allColumns).not.toBeNull();
-      expect(allColumns![1].name).toBe('Inserted Column');
+      expect(allColumns![1]!.name).toBe('Inserted Column');
     });
 
     it('returns null for a non-member', async () => {
@@ -104,7 +104,7 @@ describe('ColumnService', () => {
   describe('updateColumn', () => {
     it('updates column name', async () => {
       const { owner, columns } = await createTestProject();
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       const updated = await ColumnService.updateColumn(columnId, owner.id, {
         name: 'Updated Name',
@@ -118,7 +118,7 @@ describe('ColumnService', () => {
       const { columns } = await createTestProject();
       const nonMember = await createTestUser();
 
-      const result = await ColumnService.updateColumn(columns[0].id, nonMember.id, {
+      const result = await ColumnService.updateColumn(columns[0]!.id, nonMember.id, {
         name: 'Hacked Name',
       });
 
@@ -153,7 +153,7 @@ describe('ColumnService', () => {
       const { columns } = await createTestProject();
       const nonMember = await createTestUser();
 
-      const result = await ColumnService.deleteColumn(columns[0].id, nonMember.id);
+      const result = await ColumnService.deleteColumn(columns[0]!.id, nonMember.id);
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Permission denied');
@@ -161,7 +161,7 @@ describe('ColumnService', () => {
 
     it('returns error when deleting a column with tasks and no target', async () => {
       const { owner, columns } = await createTestProject();
-      const columnId = columns[0].id;
+      const columnId = columns[0]!.id;
 
       // Add a task to the column via direct DB insert
       const { prisma } = await import('../../config/database.js');
@@ -187,17 +187,17 @@ describe('ColumnService', () => {
     it('returns a column for a project member', async () => {
       const { owner, columns } = await createTestProject();
 
-      const column = await ColumnService.getColumnById(columns[0].id, owner.id);
+      const column = await ColumnService.getColumnById(columns[0]!.id, owner.id);
 
       expect(column).not.toBeNull();
-      expect(column!.id).toBe(columns[0].id);
+      expect(column!.id).toBe(columns[0]!.id);
     });
 
     it('returns null for a non-member', async () => {
       const { columns } = await createTestProject();
       const nonMember = await createTestUser();
 
-      const column = await ColumnService.getColumnById(columns[0].id, nonMember.id);
+      const column = await ColumnService.getColumnById(columns[0]!.id, nonMember.id);
 
       expect(column).toBeNull();
     });
